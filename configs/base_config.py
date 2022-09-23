@@ -9,6 +9,8 @@ YOLO_ACTIVATION             = 'leaky'
 
 YOLO_NORMALIZATION          = 'batchnorm'
 
+YOLO_BACKBONE_WEIGHTS       = "/home/vbpo/Desktop/TuNIT/working/Yolo/yolo-project/saved_weights/yolov3.weights"
+
 YOLO_TARGET_SIZE            = [416, 416, 3]
 
 YOLO_ANCHORS                = [[ 10,  13],
@@ -34,6 +36,7 @@ YOLO_BOX_RATIO_LOSS         = 0.05
 YOLO_OBJ_RATIO_LOSS         = 5 * (YOLO_TARGET_SIZE[0] * YOLO_TARGET_SIZE[1]) / (416 ** 2)
 
 YOLO_CLS_RATIO_LOSS         = 1 * (len(OBJECT_CLASSES) / 80)
+
 
 # Training hyper-parameters
 DATA_PATH                   = "/home/vbpo/Desktop/TuNIT/working/Yolo/yolo-project/datasets/VOC2017"
