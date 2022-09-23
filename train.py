@@ -1,6 +1,10 @@
 import tensorflow as tf
 from tensorflow.keras import Model
+from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.callbacks import CSVLogger
+
 from models.yolov3 import YOLOv3Encoder, YOLOv3Decoder
 from models.yolo import YOLO
 from losses.yolo_loss import YOLOv3Loss
@@ -45,7 +49,7 @@ def train(data_path              = cfg.DATA_PATH,
           weight_type            = cfg.TRAIN_WEIGHT_TYPE,
           weight_objects         = cfg.TRAIN_WEIGHT_OBJECTS,
           show_frequency         = cfg.TRAIN_SHOW_FREQUENCY,
-          saved_weight_frequency = cfg.TRAIN_SAVE_WEIGHT_FREQUENCY
+          saved_weight_frequency = cfg.TRAIN_SAVE_WEIGHT_FREQUENCY,
           saved_path             = cfg.TRAIN_SAVED_PATH,
           confidence_threshold   = cfg.TEST_CONFIDENCE_THRESHOLD,
           iou_threshold          = cfg.TEST_IOU_THRESHOLD,
@@ -126,9 +130,11 @@ def train(data_path              = cfg.DATA_PATH,
                                  save_freq="epoch",
                                  period=saved_weight_frequency)
     
+    logger = CSVLogger(TRAINING_TIME_PATH + 'train_history.csv', separator=",", append=True)
+
     warmup_lr = AdvanceWarmUpLearningRate(lr_init=Init_lr_fit, lr_end=Min_lr_fit, epochs=epochs, result_path=TRAINING_TIME_PATH)
     
-    callbacks = [eval_callback, history, checkpoint, warmup_lr]
+    callbacks = [eval_callback, history, checkpoint, logger, warmup_lr]
     
 
     optimizer = SGD(learning_rate=Init_lr_fit, momentum=momentum, nesterov=nesterov)
@@ -176,7 +182,7 @@ if __name__ == '__main__':
           weight_type            = cfg.TRAIN_WEIGHT_TYPE,
           weight_objects         = cfg.TRAIN_WEIGHT_OBJECTS,
           show_frequency         = cfg.TRAIN_SHOW_FREQUENCY,
-          saved_weight_frequency = cfg.TRAIN_SAVE_WEIGHT_FREQUENCY
+          saved_weight_frequency = cfg.TRAIN_SAVE_WEIGHT_FREQUENCY,
           saved_path             = cfg.TRAIN_SAVED_PATH,
           confidence_threshold   = cfg.TEST_CONFIDENCE_THRESHOLD,
           iou_threshold          = cfg.TEST_IOU_THRESHOLD,
