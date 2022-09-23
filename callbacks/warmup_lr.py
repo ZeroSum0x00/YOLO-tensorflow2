@@ -10,10 +10,10 @@ from matplotlib import pyplot as plt
 class WarmUpLearningRate(tf.keras.callbacks.Callback):
     def __init__(self, 
                  steps_per_epoch, 
-                 epochs=cfg.TRAIN_EPOCHS,
-                 warmup_epochs=cfg.TRAIN_WARMUP_EPOCHS, 
-                 lr_init=cfg.TRAIN_LR_INIT, 
-                 lr_end=cfg.TRAIN_LR_END):
+                 epochs        = cfg.TRAIN_EPOCHS,
+                 lr_init       = cfg.TRAIN_LR_INIT, 
+                 lr_end        = cfg.TRAIN_LR_END,
+                 warmup_epochs = cfg.TRAIN_WARMUP_EPOCH_RATIO):
         self.global_steps = tf.Variable(1, trainable=False, dtype=tf.int64)
         self.warmup_steps = warmup_epochs * steps_per_epoch
         self.total_steps = epochs * steps_per_epoch
@@ -32,13 +32,13 @@ class WarmUpLearningRate(tf.keras.callbacks.Callback):
 
 class AdvanceWarmUpLearningRate(tf.keras.callbacks.Callback):
     def __init__(self, 
-                 lr_init, 
-                 lr_end, 
-                 epochs,
-                 warmup_epoch_ratio=0.05, 
-                 warmup_lr_ratio=0.1, 
-                 no_aug_epoch_ratio=0.05,
-                 result_path=None):
+                 lr_init            = cfg.TRAIN_LR_INIT, 
+                 lr_end             = cfg.TRAIN_LR_END, 
+                 epochs             = cfg.TRAIN_EPOCHS,
+                 warmup_epoch_ratio = cfg.TRAIN_WARMUP_EPOCH_RATIO, 
+                 warmup_lr_ratio    = cfg.TRAIN_WARMUP_LR_RATIO, 
+                 no_aug_epoch_ratio = cfg.WITHOUT_AUG_EPOCH_RATIO,
+                 result_path        = None):
         self.lr_init             = lr_init
         self.lr_end              = lr_end
         self.epochs              = epochs
@@ -90,10 +90,10 @@ class AdvanceWarmUpLearningRate(tf.keras.callbacks.Callback):
 
 class BasicReduceLearningRate(tf.keras.callbacks.Callback):
     def __init__(self, 
-                 lr_init=cfg.TRAIN_LR_INIT, 
-                 lr_end=cfg.TRAIN_LR_END, 
-                 epochs=cfg.TRAIN_EPOCHS, 
-                 num_steps=10):
+                 lr_init   = cfg.TRAIN_LR_INIT, 
+                 lr_end    = cfg.TRAIN_LR_END, 
+                 epochs    = cfg.TRAIN_EPOCHS, 
+                 num_steps = 10):
         self.decay_rate  = (lr_end / lr_init) ** (1 / (num_steps - 1))
         step_size   = epochs / num_steps
 
