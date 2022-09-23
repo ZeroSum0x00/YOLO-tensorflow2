@@ -28,12 +28,12 @@ def extract_data_folder(data_dir, dst_dir=None):
         return data_dir
 
 
-def get_data(data_dir, 
-             classes=cfg.OBJECT_CLASSES, 
-             data_type=cfg.DATA_TYPE,
-             phase='train', 
-             check_data=cfg.CHECK_DATA,
-             load_memory=cfg.LOAD_MEMORY,
+def get_data(data_dir    = cfg.DATA_PATH, 
+             classes     = cfg.OBJECT_CLASSES, 
+             data_type   = cfg.DATA_TYPE,
+             phase       = 'train', 
+             check_data  = cfg.CHECK_DATA,
+             load_memory = cfg.DATA_LOAD_MEMORY,
              *args, **kwargs):
     data_dir = verify_folder(data_dir) + phase
     image_files = sorted([x for x in os.listdir(data_dir) if x.split('.')[-1] == 'jpg' ])
@@ -70,9 +70,9 @@ def get_data(data_dir,
 
 
 class Normalizer():
-    def __init__(self, max_bboxes_per_scale=10, mode="divide"):
+    def __init__(self, max_bboxes=cfg.YOLO_MAX_BBOXES, mode=cfg.DATA_NORMALIZER):
         self.mode = mode
-        self.max_bboxes_per_scale = max_bboxes_per_scale
+        self.max_bboxes = max_bboxes
 
     @classmethod
     def __get_standard_deviation(cls, img, mean=None, std=None):
@@ -92,11 +92,11 @@ class Normalizer():
         return img
 
     @classmethod
-    def __resize_basic_mode(cls, image, bboxes, target_size, max_bboxes_per_scale, interpolation=None):
+    def __resize_basic_mode(cls, image, bboxes, target_size, max_bboxes, interpolation=None):
         h, w, _ = image.shape
         image_resized = cv2.resize(image, (target_size[1], target_size[0]), interpolation=interpolation)
 
-        box_data = np.zeros((max_bboxes_per_scale, 5))
+        box_data = np.zeros((max_bboxes, 5))
         if len(bboxes) > 0:
             for index, box in enumerate(bboxes):
                 box[0] *= (target_size[1] / w)
@@ -104,13 +104,13 @@ class Normalizer():
                 box[2] *= (target_size[1] / w)
                 box[3] *= (target_size[0] / h) 
                 bboxes[index] = box
-            if len(bboxes) > max_bboxes_per_scale: bboxes = bboxes[:max_bboxes_per_scale]
+            if len(bboxes) > max_bboxes: bboxes = bboxes[:max_bboxes]
             box_data[:len(bboxes)] = bboxes
         return image_resized, box_data
 
     def _sub_divide(self, image, bboxes=None, mean=None, std=None, target_size=None, interpolation=None):
         if target_size and image.shape[0] != target_size[0] and image.shape[1] != target_size[1]:
-            image, bboxes = self.__resize_basic_mode(image, bboxes, target_size, self.max_bboxes_per_scale, interpolation)
+            image, bboxes = self.__resize_basic_mode(image, bboxes, target_size, self.max_bboxes, interpolation)
         image = image.astype(np.float32)
         image = image / 127.5 - 1
         if mean or std:
@@ -120,7 +120,7 @@ class Normalizer():
 
     def _divide(self, image, bboxes=None, mean=None, std=None, target_size=None, interpolation=None):
         if target_size and image.shape[0] != target_size[0] and image.shape[1] != target_size[1]:
-            image, bboxes = self.__resize_basic_mode(image, bboxes, target_size, self.max_bboxes_per_scale, interpolation)
+            image, bboxes = self.__resize_basic_mode(image, bboxes, target_size, self.max_bboxes, interpolation)
         image = image.astype(np.float32)
         image = image / 255.0
         if mean or std:
@@ -130,7 +130,7 @@ class Normalizer():
 
     def _basic(self, image, bboxes=None, mean=None, std=None, target_size=None, interpolation=None):
         if target_size and image.shape[0] != target_size[0] and image.shape[1] != target_size[1]:
-            image, bboxes = self.__resize_basic_mode(image, bboxes, target_size, self.max_bboxes_per_scale, interpolation)
+            image, bboxes = self.__resize_basic_mode(image, bboxes, target_size, self.max_bboxes, interpolation)
         image = image.astype(np.uint8)
         if mean or std:
             image = self.__get_standard_deviation(image, mean, std)
