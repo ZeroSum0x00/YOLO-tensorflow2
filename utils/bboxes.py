@@ -2,25 +2,6 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 
 
-# def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape, letterbox_image):
-#     input_shape = K.cast(input_shape, K.dtype(box_xy))
-#     image_shape = K.cast(image_shape, K.dtype(box_xy))
-
-#     if letterbox_image:
-#         new_shape = K.round(image_shape * K.min(input_shape/image_shape))
-#         offset  = (input_shape - new_shape)/2./input_shape
-#         scale   = input_shape/new_shape
-
-#         box_xy  = (box_xy - offset) * scale
-#         box_wh *= scale
-
-#     box_mins    = box_xy - (box_wh / 2.)
-#     box_maxes   = box_xy + (box_wh / 2.)
-#     boxes  = K.concatenate([box_mins[..., 0:1], box_mins[..., 1:2], box_maxes[..., 0:1], box_maxes[..., 1:2]])
-#     boxes *= K.concatenate([image_shape, image_shape])
-#     return boxes
-
-
 def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape, letterbox_image):
     box_yx = box_xy[..., ::-1]
     box_hw = box_wh[..., ::-1]
