@@ -5,10 +5,11 @@ from utils.logger import logger
 
 
 def get_label_name(classes, index):
+    min_idx = sorted(classes.values())[0]
     for key, value in classes.items():
-        if value == index:
+        if value - min_idx == index:
             return key
-    logger.error("key doesn't exist")
+    print("key doesn't exist")
 
 
 def resize_image(image, target_size, letterbox_image):
