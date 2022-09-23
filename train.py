@@ -6,6 +6,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import CSVLogger
 
 from models.yolov3 import YOLOv3Encoder, YOLOv3Decoder
+from models.architectures.darknet53 import DarkNet53
 from models.yolo import YOLO
 from losses.yolo_loss import YOLOv3Loss
 from data_utils.data_flow import get_train_test_data
@@ -31,6 +32,7 @@ def train(data_path              = cfg.DATA_PATH,
           classes                = cfg.OBJECT_CLASSES,
           yolo_activation        = cfg.YOLO_ACTIVATION,
           yolo_normalization     = cfg.YOLO_NORMALIZATION,
+          yolo_backbone_weight   = cfg.YOLO_BACKBONE_WEIGHTS,
           input_shape            = cfg.YOLO_TARGET_SIZE,
           yolo_anchors           = cfg.YOLO_ANCHORS,
           yolo_anchors_mask      = cfg.YOLO_ANCHORS_MASK,
@@ -74,10 +76,15 @@ def train(data_path              = cfg.DATA_PATH,
                                                                          exclude_difficult=exclude_difficult,
                                                                          exclude_truncated=exclude_truncated)
     num_classes = len(classes)
-
-    encoder = YOLOv3Encoder(num_classes    = num_classes, 
-                            num_anchor     = 3, 
-                            darknet_weight = "/home/vbpo/Desktop/TuNIT/working/Yolo/yolo-project/saved_weights/yolov3.weights")
+    
+    backbone = DarkNet53(input_shape=input_shape, 
+                         activation=yolo_activation, 
+                         norm_layer=yolo_normalization, 
+                         model_weights=yolo_backbone_weight)
+    
+    encoder = YOLOv3Encoder(backbone       = backbone,
+                            num_classes    = num_classes, 
+                            num_anchor     = 3)
     
     decoder = YOLOv3Decoder(anchors     = yolo_anchors,
                             num_classes = num_classes,
@@ -164,6 +171,7 @@ if __name__ == '__main__':
           classes                = cfg.OBJECT_CLASSES,
           yolo_activation        = cfg.YOLO_ACTIVATION,
           yolo_normalization     = cfg.YOLO_NORMALIZATION,
+          yolo_backbone_weight   = cfg.YOLO_BACKBONE_WEIGHTS,
           input_shape            = cfg.YOLO_TARGET_SIZE,
           yolo_anchors           = cfg.YOLO_ANCHORS,
           yolo_anchors_mask      = cfg.YOLO_ANCHORS_MASK,
