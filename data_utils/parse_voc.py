@@ -6,11 +6,11 @@ from configs import base_config as cfg
 
 class ParseVOC:
     def __init__(self, 
-                 data_dir, 
-                 labels, 
-                 load_memory=cfg.LOAD_MEMORY, 
-                 exclude_difficult=cfg.DATA_EXCLUDE_DIFFICULT, 
-                 exclude_truncated=cfg.DATA_EXCLUDE_TRUNCATED):
+                 data_dir          = cfg.DATA_PATH, 
+                 labels            = cfg.OBJECT_CLASSES,
+                 load_memory       = cfg.DATA_LOAD_MEMORY, 
+                 exclude_difficult = cfg.DATA_EXCLUDE_DIFFICULT, 
+                 exclude_truncated = cfg.DATA_EXCLUDE_TRUNCATED):
         self.data_dir          = data_dir
         self.labels            = labels
         self.load_memory       = load_memory
