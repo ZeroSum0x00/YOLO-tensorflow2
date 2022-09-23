@@ -1,10 +1,5 @@
-import os
-import datetime
-
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import SGD
 from models.yolov3 import YOLOv3Encoder, YOLOv3Decoder
 from models.yolo import YOLO
@@ -13,106 +8,99 @@ from data_utils.data_flow import get_train_test_data
 from callbacks.warmup_lr import AdvanceWarmUpLearningRate
 from callbacks.loss_history import LossHistory
 from callbacks.evaluate_map import mAPEvaluate
-from utils.files import verify_folder
 from utils.logger import logger
+from utils.train_utils import create_folder_weights
 from configs import base_config as cfg
 
 
-classes = cfg.OBJECT_CLASSES
-yolo_anchors                        = [[ 10,  13],
-                                       [ 16,  30],
-                                       [ 33,  23],
-                                       [ 30,  61],
-                                       [ 62,  45],
-                                       [ 59, 119],
-                                       [116,  90],
-                                       [156, 198],
-                                       [373, 326]]
-anchors_mask                        = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
-yolo_strides                        = [8, 16, 32]
-max_bboxes_per_scale                = 100
-input_shape                         = (416, 416, 3)
-momentum                            = 0.937
 
-saved_path                            = './saved_weights/'
-
-load_type                             = None
-weight_objects                    = [        
-                                    {
-                                        'path': './saved_weights/20220912-222333/best_weights',
-                                        'stage': 'full',
-                                        'custom_objects': None
-                                    }
-                                ]
-
-show_frequency                      = 10
-
-batch_size = 8
-learning_rate = 1e-2
-lr_init = 1e-2
-lr_end = lr_init * 0.01
-
-epochs = 300
-
-
-def create_folder_weights(saved_dir):
-    current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    TRAINING_TIME_PATH = saved_dir + current_time
-    access_rights = 0o755
-    try:
-        os.makedirs(TRAINING_TIME_PATH, access_rights)
-        logger.info("Successfully created the directory %s" % TRAINING_TIME_PATH)
-        return verify_folder(TRAINING_TIME_PATH)
-    except: 
-        logger.error("Creation of the directory %s failed" % TRAINING_TIME_PATH)
-
-
-def train(input_shape, yolo_anchors, batch_size, classes, anchors_mask, 
-          yolo_strides, learning_rate, lr_init, lr_end, momentum, epochs, max_bboxes_per_scale, load_type, weight_objects, saved_path, show_frequency):
+def train(data_path              = cfg.DATA_PATH,
+          data_anno_path         = cfg.DATA_ANNOTATION_PATH,
+          data_dst_path          = cfg.DATA_DESTINATION_PATH,
+          data_normalizer        = cfg.DATA_NORMALIZER,
+          data_augmentation      = cfg.DATA_AUGMENTATION,
+          data_type              = cfg.DATA_TYPE,
+          check_data             = cfg.CHECK_DATA,
+          load_memory            = cfg.DATA_LOAD_MEMORY,
+          exclude_difficult      = cfg.DATA_EXCLUDE_DIFFICULT,
+          exclude_truncated      = cfg.DATA_EXCLUDE_TRUNCATED,
+          classes                = cfg.OBJECT_CLASSES,
+          yolo_activation        = cfg.YOLO_ACTIVATION,
+          yolo_normalization     = cfg.YOLO_NORMALIZATION,
+          input_shape            = cfg.YOLO_TARGET_SIZE,
+          yolo_anchors           = cfg.YOLO_ANCHORS,
+          yolo_anchors_mask      = cfg.YOLO_ANCHORS_MASK,
+          yolo_strides           = cfg.YOLO_STRIDES,
+          max_bboxes             = cfg.YOLO_MAX_BBOXES,
+          balance_loss           = cfg.YOLO_BALANCE_LOSS,
+          box_ratio_loss         = cfg.YOLO_BOX_RATIO_LOSS,
+          obj_ratio_loss         = cfg.YOLO_OBJ_RATIO_LOSS,
+          cls_ratio_loss         = cfg.YOLO_CLS_RATIO_LOSS,
+          batch_size             = cfg.TRAIN_BATCH_SIZE,
+          epochs                 = cfg.TRAIN_EPOCHS,
+          momentum               = cfg.TRAIN_MOMENTUM,
+          nesterov               = cfg.TRAIN_NESTEROV,
+          lr_init                = cfg.TRAIN_LR_INIT,
+          lr_end                 = cfg.TRAIN_LR_END,
+          weight_type            = cfg.TRAIN_WEIGHT_TYPE,
+          weight_objects         = cfg.TRAIN_WEIGHT_OBJECTS,
+          show_frequency         = cfg.TRAIN_SHOW_FREQUENCY,
+          saved_weight_frequency = cfg.TRAIN_SAVE_WEIGHT_FREQUENCY
+          saved_path             = cfg.TRAIN_SAVED_PATH,
+          confidence_threshold   = cfg.TEST_CONFIDENCE_THRESHOLD,
+          iou_threshold          = cfg.TEST_IOU_THRESHOLD,
+          min_overlap            = cfg.TEST_MIN_OVERLAP):
+    
     TRAINING_TIME_PATH = create_folder_weights(saved_path)
 
-    train_generator, val_generator = get_train_test_data(data_zipfile=cfg.DATA_PATH, 
-                                                                         dst_dir=cfg.DESTINATION_PATH,
+    train_generator, val_generator = get_train_test_data(data_zipfile=data_path, 
+                                                                         dst_dir=data_dst_path,
                                                                          classes=classes, 
                                                                          target_size=input_shape, 
                                                                          batch_size=batch_size, 
                                                                          yolo_strides=yolo_strides,
                                                                          yolo_anchors=yolo_anchors,
-                                                                         anchors_mask=anchors_mask,
-                                                                         max_bboxes_per_scale=max_bboxes_per_scale,
-                                                                         augmentor=cfg.AUGMENTATION,
-                                                                         normalizer='divide',
-                                                                         data_type='voc',
-                                                                         check_data=False, 
-                                                                         load_memory=False,
-                                                                         exclude_difficult=True,
-                                                                         exclude_truncated=False)
+                                                                         yolo_anchors_mask=yolo_anchors_mask,
+                                                                         max_bboxes=max_bboxes,
+                                                                         augmentor=data_augmentation,
+                                                                         normalizer=data_normalizer,
+                                                                         data_type=data_type,
+                                                                         check_data=check_data, 
+                                                                         load_memory=load_memory,
+                                                                         exclude_difficult=exclude_difficult,
+                                                                         exclude_truncated=exclude_truncated)
     num_classes = len(classes)
 
-    encoder = YOLOv3Encoder(num_classes, num_anchor=3, darknet_weight="/home/vbpo/Desktop/TuNIT/working/Yolo/yolo3-tf2/model_data/yolov3.weights")
-    decoder = YOLOv3Decoder(yolo_anchors,
-                            num_classes,
-                            input_shape,
-                            anchors_mask,
-                            max_boxes=max_bboxes_per_scale,
-                            confidence=0.05,
-                            nms_iou=0.5,
+    encoder = YOLOv3Encoder(num_classes    = num_classes, 
+                            num_anchor     = 3, 
+                            darknet_weight = "/home/vbpo/Desktop/TuNIT/working/Yolo/yolo-project/saved_weights/yolov3.weights")
+    
+    decoder = YOLOv3Decoder(anchors     = yolo_anchors,
+                            num_classes = num_classes,
+                            input_size  = input_shape,
+                            anchor_mask = yolo_anchors_mask,
+                            max_boxes   = max_bboxes,
+                            confidence  = confidence_threshold,
+                            nms_iou     = iou_threshold,
                             letterbox_image=True)
 
     model = YOLO(encoder, decoder)
 
-    if load_type and weight_objects:
-        if load_type == "weights":
+    if weight_type and weight_objects:
+        if weight_type == "weights":
             model.load_weights(weight_objects)
-        elif load_type == "models":
+        elif weight_type == "models":
             model.load_models(weight_objects)
 
 
-    loss = YOLOv3Loss(input_shape, yolo_anchors, anchors_mask, num_classes, 
-                      balance     = [0.4, 1.0, 4],
-                      box_ratio   = 0.05, 
-                      obj_ratio   = 5 * (input_shape[0] * input_shape[1]) / (416 ** 2),
-                      cls_ratio   = 1 * (num_classes / 80))
+    loss = YOLOv3Loss(input_shape  = input_shape, 
+                      anchors      = yolo_anchors, 
+                      anchors_mask = yolo_anchors_mask, 
+                      num_classes  = num_classes, 
+                      balance      = balance_loss,
+                      box_ratio    = box_ratio_loss, 
+                      obj_ratio    = obj_ratio_loss,
+                      cls_ratio    = cls_ratio_loss)
     
     nbs             = 64
     lr_limit_max    = 5e-2 
@@ -120,20 +108,30 @@ def train(input_shape, yolo_anchors, batch_size, classes, anchors_mask,
     Init_lr_fit     = min(max(batch_size / nbs * lr_init, lr_limit_min), lr_limit_max)
     Min_lr_fit      = min(max(batch_size / nbs * lr_end, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
 
-    warmup_lr = AdvanceWarmUpLearningRate(lr_init=Init_lr_fit, lr_end=Min_lr_fit, epochs=epochs, result_path=TRAINING_TIME_PATH)
     eval_callback = mAPEvaluate(val_generator, 
-                                input_shape=input_shape, 
-                                classes=classes, 
-                                result_path=TRAINING_TIME_PATH, 
-                                max_bboxes_per_scale=max_bboxes_per_scale, 
-                                minoverlap=0.5,
-                                saved_best_map=True,
-                                show_frequency=show_frequency)
+                                input_shape    = input_shape, 
+                                classes        = classes, 
+                                result_path    = TRAINING_TIME_PATH, 
+                                max_bboxes     = max_bboxes, 
+                                minoverlap     = min_overlap,
+                                saved_best_map = True,
+                                show_frequency = show_frequency)
+    
     history = LossHistory(result_path=TRAINING_TIME_PATH)
-    callbacks = [warmup_lr, eval_callback, history]
+    
+    checkpoint = ModelCheckpoint(TRAINING_TIME_PATH + 'checkpoint_{epoch:04d}/saved_yolo_weights', 
+                                 monitor='val_total_loss',
+                                 verbose=1, 
+                                 save_weights_only=True,
+                                 save_freq="epoch",
+                                 period=saved_weight_frequency)
+    
+    warmup_lr = AdvanceWarmUpLearningRate(lr_init=Init_lr_fit, lr_end=Min_lr_fit, epochs=epochs, result_path=TRAINING_TIME_PATH)
+    
+    callbacks = [eval_callback, history, checkpoint, warmup_lr]
     
 
-    optimizer = SGD(learning_rate=Init_lr_fit, momentum=momentum, nesterov=True)
+    optimizer = SGD(learning_rate=Init_lr_fit, momentum=momentum, nesterov=nesterov)
 
     model.compile(optimizer=optimizer, loss=loss)
 
@@ -147,6 +145,39 @@ def train(input_shape, yolo_anchors, batch_size, classes, anchors_mask,
 
 
 if __name__ == '__main__':
-    train(input_shape, yolo_anchors, batch_size, classes, 
-      anchors_mask, yolo_strides, learning_rate, lr_init, lr_end, momentum,
-      epochs, max_bboxes_per_scale, load_type, weight_objects, saved_path, show_frequency)
+    train(data_path              = cfg.DATA_PATH,
+          data_anno_path         = cfg.DATA_ANNOTATION_PATH,
+          data_dst_path          = cfg.DATA_DESTINATION_PATH,
+          data_normalizer        = cfg.DATA_NORMALIZER,
+          data_augmentation      = cfg.DATA_AUGMENTATION,
+          data_type              = cfg.DATA_TYPE,
+          check_data             = cfg.CHECK_DATA,
+          load_memory            = cfg.DATA_LOAD_MEMORY,
+          exclude_difficult      = cfg.DATA_EXCLUDE_DIFFICULT,
+          exclude_truncated      = cfg.DATA_EXCLUDE_TRUNCATED,
+          classes                = cfg.OBJECT_CLASSES,
+          yolo_activation        = cfg.YOLO_ACTIVATION,
+          yolo_normalization     = cfg.YOLO_NORMALIZATION,
+          input_shape            = cfg.YOLO_TARGET_SIZE,
+          yolo_anchors           = cfg.YOLO_ANCHORS,
+          yolo_anchors_mask      = cfg.YOLO_ANCHORS_MASK,
+          yolo_strides           = cfg.YOLO_STRIDES,
+          max_bboxes             = cfg.YOLO_MAX_BBOXES,
+          balance_loss           = cfg.YOLO_BALANCE_LOSS,
+          box_ratio_loss         = cfg.YOLO_BOX_RATIO_LOSS,
+          obj_ratio_loss         = cfg.YOLO_OBJ_RATIO_LOSS,
+          cls_ratio_loss         = cfg.YOLO_CLS_RATIO_LOSS,
+          batch_size             = cfg.TRAIN_BATCH_SIZE,
+          epochs                 = cfg.TRAIN_EPOCHS,
+          momentum               = cfg.TRAIN_MOMENTUM,
+          nesterov               = cfg.TRAIN_NESTEROV,
+          lr_init                = cfg.TRAIN_LR_INIT,
+          lr_end                 = cfg.TRAIN_LR_END,
+          weight_type            = cfg.TRAIN_WEIGHT_TYPE,
+          weight_objects         = cfg.TRAIN_WEIGHT_OBJECTS,
+          show_frequency         = cfg.TRAIN_SHOW_FREQUENCY,
+          saved_weight_frequency = cfg.TRAIN_SAVE_WEIGHT_FREQUENCY
+          saved_path             = cfg.TRAIN_SAVED_PATH,
+          confidence_threshold   = cfg.TEST_CONFIDENCE_THRESHOLD,
+          iou_threshold          = cfg.TEST_IOU_THRESHOLD,
+          min_overlap            = cfg.TEST_MIN_OVERLAP)
