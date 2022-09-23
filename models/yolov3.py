@@ -1,30 +1,36 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras import Sequential, Model
-from tensorflow.keras.layers import Activation, LeakyReLU
-from tensorflow.keras.layers import Add, BatchNormalization, Conv2D, LeakyReLU, ZeroPadding2D, Input, UpSampling2D, Concatenate,Lambda
+from tensorflow.keras import Model
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import ZeroPadding2D
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Lambda
+from tensorflow.keras.layers import LeakyReLU
+from tensorflow.keras.layers import Activation
 from tensorflow.keras import backend as K
 from tensorflow.keras.regularizers import l2
-from models.architectures.darknet53 import darknet53
+
 from models.layers.normalization import FrozenBatchNormalization
 from models.layers.activations import Mish
 from utils.bboxes import yolo_correct_boxes, get_anchors_and_decode
+from configs import base_config as cfg
 
 
 class ConvolutionBlock(tf.keras.layers.Layer):
     def __init__(self, 
                  filters, 
-                 kernel_size=3, 
-                 downsample=False, 
-                 activation='leaky', 
-                 norm_layer='batchnorm', 
+                 kernel_size = 3, 
+                 downsample  = False, 
+                 activation  = cfg.YOLO_ACTIVATION, 
+                 norm_layer  = cfg.YOLO_NORMALIZATION, 
                  **kwargs):
         super(ConvolutionBlock, self).__init__(**kwargs)
         self.filters = filters
         self.kernel_size = kernel_size
-        self.downsample = downsample
-        self.activation = activation
-        self.norm_layer = norm_layer
+        self.downsample  = downsample
+        self.activation  = activation
+        self.norm_layer  = norm_layer
 
         if downsample:
             self.padding = 'valid'
@@ -83,21 +89,22 @@ class ConvolutionBlock(tf.keras.layers.Layer):
 
 class YOLOv3Encoder(tf.keras.Model):
     def __init__(self, 
-                 num_classes, 
-                 num_anchor=3,
-                 activation='leaky', 
-                 norm_layer='bn', 
-                 darknet_weight=None,
-                 name="YOLOv3Encoder", **kwargs):
+                 backbone,
+                 num_classes     = 80,
+                 num_anchor      = 3,
+                 activation      = cfg.YOLO_ACTIVATION, 
+                 norm_layer      = cfg.YOLO_NORMALIZATION, 
+                 name            = "YOLOv3Encoder", 
+                 **kwargs):
         super(YOLOv3Encoder, self).__init__(name=name, **kwargs)
-        self.num_classes = num_classes
-        self.num_anchor = num_anchor
-        self.activation = activation
-        self.norm_layer = norm_layer
-        self.darknet_weight = darknet_weight
+        self.backbone       = backbone
+        self.num_classes    = num_classes
+        self.num_anchor     = num_anchor
+        self.activation     = activation
+        self.norm_layer     = norm_layer
 
     def build(self, input_shape):
-        self.darknet53 = darknet53(input_shape=(416, 416, 3), activation=self.activation, norm_layer=self.norm_layer, model_weights=self.darknet_weight)
+        self.backbone = backbone
         self.block0 = self._conv_block([512, 1024, 512, 1024, 512], self.activation, self.norm_layer, name='convolution_extractor_0')
         self.conv_lobj = ConvolutionBlock(1024, 3, False, self.activation, self.norm_layer, name='large_object_predictor')
         self.conv_lbbox = ConvolutionBlock(self.num_anchor*(self.num_classes + 5), 1, False, None, None, name='large_bbox_predictor')
@@ -129,7 +136,7 @@ class YOLOv3Encoder(tf.keras.Model):
         ], name=name)
 
     def call(self, inputs, training=False):
-        x1, x2, x3 = self.darknet53(inputs, training=training)
+        x1, x2, x3 = self.backbone(inputs, training=training)
         x3 = self.block0(x3, training=training)
         conv_lobj = self.conv_lobj(x3, training=training)
         layer82 = self.conv_lbbox(conv_lobj, training=training)
@@ -150,21 +157,21 @@ class YOLOv3Encoder(tf.keras.Model):
 
 class YOLOv3Decoder:
     def __init__(self,
-                 anchors,
-                 num_classes,
-                 input_size,
-                 anchor_mask     = [[6, 7, 8], [3, 4, 5], [0, 1, 2]],
-                 max_boxes       = 100,
-                 confidence      = 0.5,
-                 nms_iou         = 0.3,
+                 input_size      = cfg.YOLO_TARGET_SIZE,
+                 num_classes     = 80,
+                 anchors         = cfg.YOLO_ANCHORS,
+                 anchor_mask     = cfg.YOLO_ANCHORS_MASK,
+                 max_boxes       = cfg.YOLO_MAX_BBOXES,
+                 confidence      = cfg.TEST_CONFIDENCE_THRESHOLD,
+                 nms_iou         = cfg.TEST_IOU_THRESHOLD,
                  letterbox_image = True):
-        self.anchors = np.array(anchors)
-        self.num_classes = num_classes
-        self.input_size = input_size
-        self.anchor_mask = np.array(anchor_mask)
-        self.max_boxes = max_boxes
-        self.confidence = confidence
-        self.nms_iou = nms_iou
+        self.anchors         = np.array(anchors)
+        self.num_classes     = num_classes
+        self.input_size      = input_size
+        self.anchor_mask     = np.array(anchor_mask)
+        self.max_boxes       = max_boxes
+        self.confidence      = confidence
+        self.nms_iou         = nms_iou
         self.letterbox_image = letterbox_image
     
     def decode_caculator(self, inputs):
