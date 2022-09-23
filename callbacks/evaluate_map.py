@@ -20,20 +20,20 @@ from matplotlib import pyplot as plt
 class mAPEvaluate(tf.keras.callbacks.Callback):
     def __init__(self, 
                  val_dataset, 
-                 input_shape=cfg.TRAIN_TARGET_SIZE, 
-                 classes=cfg.OBJECT_CLASSES, 
-                 result_path=None, 
-                 max_bboxes_per_scale=cfg.YOLO_MAX_BBOX_PER_SCALE, 
-                 minoverlap=0.5,
-                 saved_best_map=True,
-                 show_frequency=10):
+                 input_shape    = cfg.YOLO_TARGET_SIZE, 
+                 classes        = cfg.OBJECT_CLASSES, 
+                 result_path    = None, 
+                 max_bboxes     = cfg.YOLO_MAX_BBOXES, 
+                 minoverlap     = cfg.TEST_MIN_OVERLAP,
+                 saved_best_map = True,
+                 show_frequency = cfg.TRAIN_SHOW_FREQUENCY):
         super(mAPEvaluate, self).__init__()
         self.val_dataset          = val_dataset
         self.input_shape          = input_shape
         self.classes              = classes
         self.result_path          = result_path
         self.data_path            = val_dataset.data_path
-        self.max_bboxes_per_scale = max_bboxes_per_scale
+        self.max_bboxes           = max_bboxes
         self.minoverlap           = minoverlap
         self.saved_best_map       = saved_best_map
         self.show_frequency       = show_frequency
@@ -53,7 +53,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
         out_scores = out_scores.numpy()
         out_classes = out_classes.numpy()
         
-        top_100     = np.argsort(out_scores)[::-1][:self.max_bboxes_per_scale]
+        top_100     = np.argsort(out_scores)[::-1][:self.max_bboxes]
         out_boxes   = out_boxes[top_100]
         out_scores  = out_scores[top_100]
         out_classes = out_classes[top_100]
@@ -145,6 +145,4 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
             plt.savefig(os.path.join(self.result_path, "epoch_map.png"))
             plt.cla()
             plt.close("all")
-
-            print("Get map done.")
             shutil.rmtree(self.map_out_path)
