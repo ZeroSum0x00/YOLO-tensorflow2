@@ -1,11 +1,14 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Add, BatchNormalization, Conv2D, LeakyReLU, ZeroPadding2D, Input, UpSampling2D, Concatenate,Lambda
+from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import ZeroPadding2D
 from tensorflow.keras import backend as K
-
 from tensorflow.keras.regularizers import l2
+
 from models.layers import get_activation_from_name, get_normalization_from_name
+from configs import base_config as cfg
 
 
 def convolutional_block(x, filters, kernel_size, downsample=False, activation='leaky', norm_layer='batchnorm'):
@@ -40,10 +43,11 @@ def residual_block(x, num_filters, activation='leaky', norm_layer='batchnorm'):
     return x
 
 
-def darknet53(input_shape, activation='leaky', norm_layer='batchnorm', model_weights=None):
+def DarkNet53(input_shape, activation='leaky', norm_layer='batchnorm', model_weights=None):
     input_data  = Input(input_shape)
     x = convolutional_block(input_data, 32, 3, activation=activation, norm_layer=norm_layer)
     x = convolutional_block(x, 64, 3, downsample=True, activation=activation, norm_layer=norm_layer)
+    
     for i in range(1):
         x = residual_block(x,  [32, 64], activation=activation, norm_layer=norm_layer)
 
