@@ -5,6 +5,7 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import ZeroPadding2D
 from tensorflow.keras.layers import concatenate
+from tensorflow.keras.layers import add
 from tensorflow.keras import backend as K
 from tensorflow.keras.regularizers import l2
 
@@ -40,7 +41,7 @@ def residual_block(x, num_filters, activation='leaky', norm_layer='batchnorm'):
     shortcut = x
     x = convolutional_block(x, filters=num_filters[0], kernel_size=1, activation=activation, norm_layer=norm_layer)
     x = convolutional_block(x, filters=num_filters[1], kernel_size=3, activation=activation, norm_layer=norm_layer)
-    x = shortcut + x
+    x = add([shortcut, x])
     return x
 
 
@@ -79,93 +80,64 @@ def DarkNet53(input_shape, activation='leaky', norm_layer='batchnorm', model_wei
         load_yolo_weights(model, model_weights)
     return model
 
+
+def CSPDarkNetBlock(x, num_filters, block_iter, activation, norm_layer):
+    route = x
+    route = convolutional_block(route, num_filters[1], 1, activation=activation, norm_layer=norm_layer)
+    
+    x = convolutional_block(x, num_filters[1], 1, activation=activation, norm_layer=norm_layer)
+
+    for i in range(block_iter):
+        x = residual_block(x,  [num_filters[0], num_filters[1]], activation=activation, norm_layer=norm_layer)
+
+    x = convolutional_block(x, num_filters[1], 1, activation=activation, norm_layer=norm_layer)
+    x = concatenate([x, route], axis=-1)
+    x = convolutional_block(x, num_filters[0]*2, 1, activation=activation, norm_layer=norm_layer)
+    return x
+
+
 def CSPDarkNet53(input_shape, activation='mish', norm_layer='batchnorm', model_weights=None):
     input_data  = Input(input_shape)
 
     x = convolutional_block(input_data, 32, 3, activation=activation, norm_layer=norm_layer)
+
+    # Downsample 1
     x = convolutional_block(x, 64, 3, downsample=True, activation=activation, norm_layer=norm_layer)
     
-    route = x
-    route = convolutional_block(route, 64, 1, activation=activation, norm_layer=norm_layer)
-    
-    x = convolutional_block(x, 64, 1, activation=activation, norm_layer=norm_layer)
+    # CSPResBlock 1
+    x = CSPDarkNetBlock(x, [32, 64], 1, activation=activation, norm_layer=norm_layer)
 
-    for i in range(1):
-        x = residual_block(x,  [32, 64], activation=activation, norm_layer=norm_layer)
-
-    x = convolutional_block(x, 64, 1, activation=activation, norm_layer=norm_layer)
-
-    x = concatenate([x, route], axis=-1)
-    x = convolutional_block(x, 64, 1, activation=activation, norm_layer=norm_layer)
+    # Downsample 2
     x = convolutional_block(x, 128, 3, downsample=True, activation=activation, norm_layer=norm_layer)
 
-    route = x
-    route = convolutional_block(route, 64, 1, activation=activation, norm_layer=norm_layer)
-    x = convolutional_block(x, 64, 1, activation=activation, norm_layer=norm_layer)
+    # CSPResBlock 2
+    x = CSPDarkNetBlock(x, [64, 64], 2, activation=activation, norm_layer=norm_layer)
 
-    for i in range(2):
-        x = residual_block(x, [64, 64], activation=activation, norm_layer=norm_layer)
-
-    x = convolutional_block(x, 64, 1, activation=activation, norm_layer=norm_layer)
-    x = concatenate([x, route], axis=-1)
-
-    x = convolutional_block(x, 128, 1, activation=activation, norm_layer=norm_layer)
+    # Downsample 3
     x = convolutional_block(x, 256, 3, downsample=True, activation=activation, norm_layer=norm_layer)
 
-    route = x
-    route = convolutional_block(route, 128, 1, activation=activation, norm_layer=norm_layer)
-    x = convolutional_block(x, 128, 1, activation=activation, norm_layer=norm_layer)
+    # CSPResBlock 3
+    x = CSPDarkNetBlock(x, [128, 128], 8, activation=activation, norm_layer=norm_layer)
 
-    for i in range(8):
-        x = residual_block(x, [128, 128], activation=activation, norm_layer=norm_layer)
-
-    x = convolutional_block(x, 128, 1, activation=activation, norm_layer=norm_layer)
-    x = concatenate([x, route], axis=-1)
-
-
-    x = convolutional_block(x, 256, 1, activation=activation, norm_layer=norm_layer)
     route_1 = x
+
+    # Downsample 4
     x = convolutional_block(x, 512, 3, downsample=True, activation=activation, norm_layer=norm_layer)
 
-    route = x
-    route = convolutional_block(route, 256, 1, activation=activation, norm_layer=norm_layer)
-    x = convolutional_block(x, 256, 1, activation=activation, norm_layer=norm_layer)
+    # CSPResBlock 4
+    x = CSPDarkNetBlock(x, [256, 256], 8, activation=activation, norm_layer=norm_layer)
 
-    for i in range(8):
-        x = residual_block(x, [256, 256], activation=activation, norm_layer=norm_layer)
-
-    x = convolutional_block(x, 256, 1, activation=activation, norm_layer=norm_layer)
-    x = concatenate([x, route], axis=-1)
-
-    x = convolutional_block(x, 512, 1, activation=activation, norm_layer=norm_layer)
     route_2 = x
+
+    # Downsample 5
     x = convolutional_block(x, 1024, 3, downsample=True, activation=activation, norm_layer=norm_layer)
-    route = x
-    route = convolutional_block(route, 512, 1, activation=activation, norm_layer=norm_layer)
-    x = convolutional_block(x, 512, 1, activation=activation, norm_layer=norm_layer)
 
-    for i in range(4):
-        x = residual_block(x, [512, 512], activation=activation, norm_layer=norm_layer)
+    # CSPResBlock 5
+    x = CSPDarkNetBlock(x, [512, 512], 4, activation=activation, norm_layer=norm_layer)
 
-    x = convolutional_block(x, 512, 1, activation=activation, norm_layer=norm_layer)
-    x = concatenate([x, route], axis=-1)
-
-    x = convolutional_block(x, 1024, 1, activation=activation, norm_layer=norm_layer)
-    x = convolutional_block(x, 512, 1, activation=activation, norm_layer=norm_layer)
-    x = convolutional_block(x, 1024, 3, activation=activation, norm_layer=norm_layer)
-    x = convolutional_block(x, 512, 1, activation=activation, norm_layer=norm_layer)
-
-    pooling_1 = MaxPool2D(pool_size=(13, 13), padding='same', strides=1)(x)
-    pooling_2 = MaxPool2D(pool_size=(9, 9), padding='same', strides=1)(x)
-    pooling_3 = MaxPool2D(pool_size=(5, 5), padding='same', strides=1)(x)
-    x = concatenate([pooling_1, pooling_2, pooling_3, x], axis=-1)
-
-    x = convolutional_block(x, 512, 1, activation=activation, norm_layer=norm_layer)
-    x = convolutional_block(x, 1024, 3, activation=activation, norm_layer=norm_layer)
-    x = convolutional_block(x, 512, 1, activation=activation, norm_layer=norm_layer)
-
-    model = Model(inputs=input_data, outputs=[route_1, route_2, x])
+    model = Model(inputs=input_data, outputs=[x])
     return model
+
 
 def load_yolo_weights(model, weights_file):
     #tf.keras.backend.clear_session() # used to reset layer names
