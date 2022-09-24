@@ -4,6 +4,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import ZeroPadding2D
+from tensorflow.keras.layers import concatenate
 from tensorflow.keras import backend as K
 from tensorflow.keras.regularizers import l2
 
@@ -94,7 +95,7 @@ def CSPDarkNet53(input_shape, activation='mish', norm_layer='batchnorm', model_w
 
     x = convolutional_block(x, 64, 1, activation=activation, norm_layer=norm_layer)
 
-    x = tf.concat([x, route], axis=-1)
+    x = concatenate([x, route], axis=-1)
     x = convolutional_block(x, 64, 1, activation=activation, norm_layer=norm_layer)
     x = convolutional_block(x, 128, 3, downsample=True, activation=activation, norm_layer=norm_layer)
 
@@ -106,7 +107,7 @@ def CSPDarkNet53(input_shape, activation='mish', norm_layer='batchnorm', model_w
         x = residual_block(x, [64, 64], activation=activation, norm_layer=norm_layer)
 
     x = convolutional_block(x, 64, 1, activation=activation, norm_layer=norm_layer)
-    x = tf.concat([x, route], axis=-1)
+    x = concatenate([x, route], axis=-1)
 
     x = convolutional_block(x, 128, 1, activation=activation, norm_layer=norm_layer)
     x = convolutional_block(x, 256, 3, downsample=True, activation=activation, norm_layer=norm_layer)
@@ -119,7 +120,7 @@ def CSPDarkNet53(input_shape, activation='mish', norm_layer='batchnorm', model_w
         x = residual_block(x, [128, 128], activation=activation, norm_layer=norm_layer)
 
     x = convolutional_block(x, 128, 1, activation=activation, norm_layer=norm_layer)
-    x = tf.concat([x, route], axis=-1)
+    x = concatenate([x, route], axis=-1)
 
 
     x = convolutional_block(x, 256, 1, activation=activation, norm_layer=norm_layer)
@@ -134,7 +135,7 @@ def CSPDarkNet53(input_shape, activation='mish', norm_layer='batchnorm', model_w
         x = residual_block(x, [256, 256], activation=activation, norm_layer=norm_layer)
 
     x = convolutional_block(x, 256, 1, activation=activation, norm_layer=norm_layer)
-    x = tf.concat([x, route], axis=-1)
+    x = concatenate([x, route], axis=-1)
 
     x = convolutional_block(x, 512, 1, activation=activation, norm_layer=norm_layer)
     route_2 = x
@@ -147,7 +148,7 @@ def CSPDarkNet53(input_shape, activation='mish', norm_layer='batchnorm', model_w
         x = residual_block(x, [512, 512], activation=activation, norm_layer=norm_layer)
 
     x = convolutional_block(x, 512, 1, activation=activation, norm_layer=norm_layer)
-    x = tf.concat([x, route], axis=-1)
+    x = concatenate([x, route], axis=-1)
 
     x = convolutional_block(x, 1024, 1, activation=activation, norm_layer=norm_layer)
     x = convolutional_block(x, 512, 1, activation=activation, norm_layer=norm_layer)
@@ -157,15 +158,13 @@ def CSPDarkNet53(input_shape, activation='mish', norm_layer='batchnorm', model_w
     pooling_1 = MaxPool2D(pool_size=(13, 13), padding='same', strides=1)(x)
     pooling_2 = MaxPool2D(pool_size=(9, 9), padding='same', strides=1)(x)
     pooling_3 = MaxPool2D(pool_size=(5, 5), padding='same', strides=1)(x)
-    x = tf.concat([pooling_1, pooling_2, pooling_3, x], axis=-1)
+    x = concatenate([pooling_1, pooling_2, pooling_3, x], axis=-1)
 
     x = convolutional_block(x, 512, 1, activation=activation, norm_layer=norm_layer)
     x = convolutional_block(x, 1024, 3, activation=activation, norm_layer=norm_layer)
     x = convolutional_block(x, 512, 1, activation=activation, norm_layer=norm_layer)
 
-
     model = Model(inputs=input_data, outputs=[route_1, route_2, x])
-
     return model
 
 def load_yolo_weights(model, weights_file):
