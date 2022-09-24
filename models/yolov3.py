@@ -104,7 +104,6 @@ class YOLOv3Encoder(tf.keras.Model):
         self.norm_layer     = norm_layer
 
     def build(self, input_shape):
-        self.backbone = backbone
         self.block0 = self._conv_block([512, 1024, 512, 1024, 512], self.activation, self.norm_layer, name='convolution_extractor_0')
         self.conv_lobj = ConvolutionBlock(1024, 3, False, self.activation, self.norm_layer, name='large_object_predictor')
         self.conv_lbbox = ConvolutionBlock(self.num_anchor*(self.num_classes + 5), 1, False, None, None, name='large_bbox_predictor')
