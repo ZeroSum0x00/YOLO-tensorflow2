@@ -133,19 +133,12 @@ class Train_Data_Sequence(Sequence):
         return int(np.ceil(self.N / float(self.batch_size)))
 
     def __getitem__(self, index):
-        batch_image = np.zeros((self.batch_size, *self.target_size), dtype=np.float32)
-#         batch_image    = []
+        batch_image    = []
         batch_label    = []
 
-        for i in range(self.batch_size):          
-            index = min((index * self.batch_size) + i, self.N)
-            if index < self.N:
-                sample = self.dataset[index]
-            else:
-                sample = random.choice(self.dataset)
-#         for i in range(index * self.batch_size, (index + 1) * self.batch_size):  
-#             i           = i % self.N
-#             sample = self.dataset[i]
+        for i in range(index * self.batch_size, (index + 1) * self.batch_size):  
+            i           = i % self.N
+            sample = self.dataset[i]
             img_path = self.data_path + sample['filename']
             image = cv2.imread(img_path)
             bboxes = np.array(sample['bboxes'])
@@ -157,11 +150,10 @@ class Train_Data_Sequence(Sequence):
                                             bboxes=bboxes,
                                             target_size=self.target_size,
                                             interpolation=cv2.INTER_NEAREST)
-            batch_image[i] = image
-#             batch_image.append(image)
+            batch_image.append(image)
             batch_label.append(bboxes)
         
-#         batch_image = np.array(batch_image)
+        batch_image = np.array(batch_image)
         batch_label = np.array(batch_label)
         batch_label = preprocess_true_boxes(batch_label, self.target_size, self.anchors, self.yolo_anchors_mask, self.num_classes, self.yolo_strides)
         return batch_image, batch_label
@@ -206,19 +198,12 @@ class Valid_Data_Sequence(Sequence):
         return int(np.ceil(self.N / float(self.batch_size)))
 
     def __getitem__(self, index):
-        batch_image = np.zeros((self.batch_size, *self.target_size), dtype=np.float32)
-#         batch_image    = []
+        batch_image    = []
         batch_label    = []
 
-        for i in range(self.batch_size):          
-            index = min((index * self.batch_size) + i, self.N)
-            if index < self.N:
-                sample = self.dataset[index]
-            else:
-                sample = random.choice(self.dataset)
-#         for i in range(index * self.batch_size, (index + 1) * self.batch_size):  
-#             i           = i % self.N
-#             sample = self.dataset[i]
+        for i in range(index * self.batch_size, (index + 1) * self.batch_size):  
+            i           = i % self.N
+            sample = self.dataset[i]
             img_path = self.data_path + sample['filename']
             image = cv2.imread(img_path)
             bboxes = np.array(sample['bboxes'])
@@ -230,9 +215,13 @@ class Valid_Data_Sequence(Sequence):
                                             bboxes=bboxes,
                                             target_size=self.target_size,
                                             interpolation=cv2.INTER_NEAREST)
-            batch_image[i] = image
-#             batch_image.append(image)
+            batch_image.append(image)
             batch_label.append(bboxes)
+        
+        batch_image = np.array(batch_image)
+        batch_label = np.array(batch_label)
+        batch_label = preprocess_true_boxes(batch_label, self.target_size, self.anchors, self.yolo_anchors_mask, self.num_classes, self.yolo_strides)
+        return batch_image, batch_label
 
 #         batch_image  = np.array(batch_image)
         batch_label = np.array(batch_label)
@@ -278,17 +267,13 @@ class Test_Data_Sequence(Sequence):
     def __len__(self):
         return int(np.ceil(self.N / float(self.batch_size)))
 
-    def __getitem__(self, idx):
-        batch_image = np.zeros((self.batch_size, *self.target_size), dtype=np.float32)
+    def __getitem__(self, index):
+        batch_image    = []
         batch_label    = []
 
-        for i in range(self.batch_size):          
-            index = min((idx * self.batch_size) + i, self.N)
-            if index < self.N:
-                sample = self.dataset[index]
-            else:
-                sample = random.choice(self.dataset)
-
+        for i in range(index * self.batch_size, (index + 1) * self.batch_size):  
+            i           = i % self.N
+            sample = self.dataset[i]
             img_path = self.data_path + sample['filename']
             image = cv2.imread(img_path)
             bboxes = np.array(sample['bboxes'])
@@ -300,9 +285,10 @@ class Test_Data_Sequence(Sequence):
                                             bboxes=bboxes,
                                             target_size=self.target_size,
                                             interpolation=cv2.INTER_NEAREST)
-            batch_image[i] = image
+            batch_image.append(image)
             batch_label.append(bboxes)
-
+        
+        batch_image = np.array(batch_image)
         batch_label = np.array(batch_label)
         batch_label = preprocess_true_boxes(batch_label, self.target_size, self.anchors, self.yolo_anchors_mask, self.num_classes, self.yolo_strides)
         return batch_image, batch_label
