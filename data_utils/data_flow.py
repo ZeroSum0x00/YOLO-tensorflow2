@@ -222,11 +222,6 @@ class Valid_Data_Sequence(Sequence):
         batch_label = np.array(batch_label)
         batch_label = preprocess_true_boxes(batch_label, self.target_size, self.anchors, self.yolo_anchors_mask, self.num_classes, self.yolo_strides)
         return batch_image, batch_label
-
-#         batch_image  = np.array(batch_image)
-        batch_label = np.array(batch_label)
-        batch_label = preprocess_true_boxes(batch_label, self.target_size, self.anchors, self.yolo_anchors_mask, self.num_classes, self.yolo_strides)
-        return batch_image, batch_label
     
     def on_epoch_end(self):
         self.dataset = shuffle(self.dataset)
