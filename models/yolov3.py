@@ -105,52 +105,45 @@ class YOLOv3Encoder(tf.keras.Model):
 
     def build(self, input_shape):
         self.block0 = self._conv_block([512, 1024, 512, 1024, 512], self.activation, self.norm_layer, name='convolution_extractor_0')
-        self.conv_lobj = ConvolutionBlock(1024, 3, False, self.activation, self.norm_layer, name='large_object_predictor')
-        self.conv_lbbox = ConvolutionBlock(self.num_anchor*(self.num_classes + 5), 1, False, None, None, name='large_bbox_predictor')
+        self.conv_lbbox = self._yolo_head(1024, self.activation, self.norm_layer, name='large_bbox_predictor')
         self.upsample0 = self._upsample_block(256, 2, self.activation, self.norm_layer, name='upsample_block_0')
         self.block1 = self._conv_block([256, 512, 256, 512, 256], self.activation, self.norm_layer, name='convolution_extractor_1')
-        self.conv_mobj = ConvolutionBlock(512, 3, False, self.activation, self.norm_layer, name='medium_object_predictor')
-        self.conv_mbbox = ConvolutionBlock(self.num_anchor*(self.num_classes + 5), 1, False, None, None, name='medium_bbox_predictor')
+        self.conv_mbbox = self._yolo_head(512, self.activation, self.norm_layer, name='medium_bbox_predictor')
         self.upsample1 = self._upsample_block(128, 2, self.activation, self.norm_layer, name='upsample_block_1')
         self.block2 = self._conv_block([128, 256, 128, 256, 128], self.activation, self.norm_layer, name='convolution_extractor_2')
-        self.conv_sobj = ConvolutionBlock(256, 3, False, self.activation, self.norm_layer, name='small_object_predictor')
-        self.conv_sbbox = ConvolutionBlock(self.num_anchor*(self.num_classes + 5), 1, False, None, None, name='small_bbox_predictor')
+        self.conv_sbbox = self._yolo_head(256, self.activation, self.norm_layer, name='small_bbox_predictor')
 
-    @classmethod
-    def _conv_block(cls, num_filters, activation='leaky', norm_layer='batchnorm', name="conv_block"):
-        f0, f1, f2, f3, f4 = num_filters
+    def _conv_block(self, num_filters, activation='leaky', norm_layer='batchnorm', name="conv_block"):
         return Sequential([
-            ConvolutionBlock(f0, 1, False, activation, norm_layer),
-            ConvolutionBlock(f1, 3, False, activation, norm_layer),
-            ConvolutionBlock(f2, 1, False, activation, norm_layer),
-            ConvolutionBlock(f3, 3, False, activation, norm_layer),
-            ConvolutionBlock(f4, 1, False, activation, norm_layer),
+            ConvolutionBlock(filters, 1 if i % 2 == 0 else 3, False, activation, norm_layer) for i, filters in enumerate(num_filters)
         ], name=name)
 
-    @classmethod
-    def _upsample_block(cls, filters, upsample_size, activation='leaky', norm_layer='batchnorm', name='upsample_block'):
+    def _upsample_block(self, filters, upsample_size, activation='leaky', norm_layer='batchnorm', name='upsample_block'):
         return Sequential([
             ConvolutionBlock(filters, 1, False, activation, norm_layer),
             UpSampling2D(size=upsample_size,)
         ], name=name)
 
+    def _yolo_head(self, filters, activation='leaky', norm_layer='batchnorm', name='upsample_block'):
+        return Sequential([
+            ConvolutionBlock(filters, 3, False, activation, norm_layer),
+            ConvolutionBlock(self.num_anchor*(self.num_classes + 5), 1, False, None, None)
+        ], name=name)
+
     def call(self, inputs, training=False):
         x1, x2, x3 = self.backbone(inputs, training=training)
         x3 = self.block0(x3, training=training)
-        conv_lobj = self.conv_lobj(x3, training=training)
-        layer82 = self.conv_lbbox(conv_lobj, training=training)
+        layer82 = self.conv_lbbox(x3, training=training)
 
         x3 = self.upsample0(x3, training=training)
         x3 = tf.concat([x3, x2], axis=-1)
         x3 = self.block1(x3, training=training)
-        conv_mobj = self.conv_mobj(x3, training=training)
-        layer94 = self.conv_mbbox(conv_mobj, training=training)
+        layer94 = self.conv_mbbox(x3, training=training)
 
         x3 = self.upsample1(x3, training=training)
         x3 = tf.concat([x3, x1], axis=-1)
         x3 = self.block2(x3, training=training)
-        conv_sobj = self.conv_sobj(x3, training=training)
-        layer106 = self.conv_sbbox(conv_sobj, training=training)
+        layer106 = self.conv_sbbox(x3, training=training)
         return layer82, layer94, layer106
 
 
