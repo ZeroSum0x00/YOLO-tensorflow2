@@ -143,9 +143,8 @@ class YOLOv3Encoder(tf.keras.Model):
         self.activation     = activation
         self.norm_layer     = norm_layer
 
-
     def build(self, input_shape):
-        self.fpn    = FPNLayer(self.activation, self.norm_layer, name="FPNLayer")
+        self.neck       = FPNLayer(self.activation, self.norm_layer, name="FPNLayer")
         self.conv_lbbox = self._yolo_head(1024, self.activation, self.norm_layer, name='large_bbox_predictor')
         self.conv_mbbox = self._yolo_head(512, self.activation, self.norm_layer, name='medium_bbox_predictor')
         self.conv_sbbox = self._yolo_head(256, self.activation, self.norm_layer, name='small_bbox_predictor')
@@ -158,7 +157,7 @@ class YOLOv3Encoder(tf.keras.Model):
 
     def call(self, inputs, training=False):
         P3, P4, P5 = self.backbone(inputs, training=training)
-        P3, P4, P5 = self.fpn([P3, P4, P5], training=training)
+        P3, P4, P5 = self.neck([P3, P4, P5], training=training)
         P5_out     = self.conv_lbbox(P5, training=training)
         P4_out     = self.conv_mbbox(P4, training=training)
         P3_out     = self.conv_sbbox(P3, training=training)
