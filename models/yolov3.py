@@ -165,7 +165,7 @@ class YOLOv3Encoder(tf.keras.Model):
         return P5_out, P4_out, P3_out
 
 
-class YOLOv3Decoder:
+class YOLOv3Decoder(tf.keras.layers.Layer):
     def __init__(self,
                  input_size      = cfg.YOLO_TARGET_SIZE,
                  num_classes     = 80,
@@ -174,7 +174,9 @@ class YOLOv3Decoder:
                  max_boxes       = cfg.YOLO_MAX_BBOXES,
                  confidence      = cfg.TEST_CONFIDENCE_THRESHOLD,
                  nms_iou         = cfg.TEST_IOU_THRESHOLD,
-                 letterbox_image = True):
+                 letterbox_image = True,
+                 name            = "YOLOv3Decoder", 
+                 **kwargs):
         self.anchors         = np.array(anchors)
         self.num_classes     = num_classes
         self.input_size      = input_size
@@ -184,7 +186,7 @@ class YOLOv3Decoder:
         self.nms_iou         = nms_iou
         self.letterbox_image = letterbox_image
     
-    def decode_caculator(self, inputs):
+    def call(self, inputs):
         image_shape = K.reshape(inputs[-1],[-1])
 
         box_xy = []
@@ -229,6 +231,3 @@ class YOLOv3Decoder:
         scores_out     = K.concatenate(scores_out, axis=0)
         classes_out    = K.concatenate(classes_out, axis=0)
         return boxes_out, scores_out, classes_out
-
-    def __call__(self, inputs):
-        return Lambda(self.decode_caculator)(inputs)
