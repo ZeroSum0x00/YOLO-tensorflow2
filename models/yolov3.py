@@ -5,6 +5,7 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import ZeroPadding2D
 from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import Activation
@@ -164,28 +165,26 @@ class YOLOv3Encoder(tf.keras.Model):
         return P5_out, P4_out, P3_out
 
 
-class YOLOv3Decoder(tf.keras.layers.Layer):
+class YOLOv3Decoder:
     def __init__(self,
-                 input_size      = cfg.YOLO_TARGET_SIZE,
-                 num_classes     = 80,
-                 anchors         = cfg.YOLO_ANCHORS,
-                 anchor_mask     = cfg.YOLO_ANCHORS_MASK,
-                 max_boxes       = cfg.YOLO_MAX_BBOXES,
-                 confidence      = cfg.TEST_CONFIDENCE_THRESHOLD,
-                 nms_iou         = cfg.TEST_IOU_THRESHOLD,
-                 letterbox_image = True,
-                 name            = "YOLOv3Decoder", 
-                 **kwargs):
-        self.anchors         = np.array(anchors)
-        self.num_classes     = num_classes
-        self.input_size      = input_size
-        self.anchor_mask     = np.array(anchor_mask)
-        self.max_boxes       = max_boxes
-        self.confidence      = confidence
-        self.nms_iou         = nms_iou
+                 anchors,
+                 num_classes,
+                 input_size,
+                 anchor_mask     = [[6, 7, 8], [3, 4, 5], [0, 1, 2]],
+                 max_boxes       = 100,
+                 confidence      = 0.5,
+                 nms_iou         = 0.3,
+                 letterbox_image = True):
+        self.anchors = np.array(anchors)
+        self.num_classes = num_classes
+        self.input_size = input_size
+        self.anchor_mask = np.array(anchor_mask)
+        self.max_boxes = max_boxes
+        self.confidence = confidence
+        self.nms_iou = nms_iou
         self.letterbox_image = letterbox_image
     
-    def call(self, inputs):
+    def decode_caculator(self, inputs):
         image_shape = K.reshape(inputs[-1],[-1])
 
         box_xy = []
@@ -230,3 +229,6 @@ class YOLOv3Decoder(tf.keras.layers.Layer):
         scores_out     = K.concatenate(scores_out, axis=0)
         classes_out    = K.concatenate(classes_out, axis=0)
         return boxes_out, scores_out, classes_out
+
+    def __call__(self, inputs):
+        return Lambda(self.decode_caculator)(inputs)
