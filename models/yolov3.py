@@ -86,6 +86,46 @@ class ConvolutionBlock(tf.keras.layers.Layer):
             x = self.activation(x)
         return x
 
+    
+class FPNLayer(tf.keras.layers.Layer):
+    def __init__(self, 
+                 activation      = cfg.YOLO_ACTIVATION, 
+                 norm_layer      = cfg.YOLO_NORMALIZATION, 
+                 name            = "FPNLayer", 
+                 **kwargs):
+        super(FPNLayer, self).__init__(name=name, **kwargs)
+        self.activation     = activation
+        self.norm_layer     = norm_layer
+
+    def build(self, input_shape):
+        self.P5_block = self._conv_block([512, 1024, 512, 1024, 512], self.activation, self.norm_layer)
+        self.P5_up    = self._upsample_block(256, 2, self.activation, self.norm_layer)
+        self.P4_block = self._conv_block([256, 512, 256, 512, 256], self.activation, self.norm_layer)
+        self.P4_up    = self._upsample_block(128, 2, self.activation, self.norm_layer)
+        self.P3_block = self._conv_block([128, 256, 128, 256, 128], self.activation, self.norm_layer)
+
+    def _conv_block(self, num_filters, activation='leaky', norm_layer='batchnorm', name="conv_block"):
+        return Sequential([
+            ConvolutionBlock(filters, 1 if i % 2 == 0 else 3, False, activation, norm_layer) for i, filters in enumerate(num_filters)
+        ], name=name)
+
+    def _upsample_block(self, filters, upsample_size, activation='leaky', norm_layer='batchnorm', name='upsample_block'):
+        return Sequential([
+            ConvolutionBlock(filters, 1, False, activation, norm_layer),
+            UpSampling2D(size=upsample_size,)
+        ], name=name)
+
+    def call(self, inputs, training=False):
+        P3, P4, P5  = inputs
+        P5          = self.P5_block(P5, training=training)
+        P5_up       = self.P5_up(P5, training=training)
+        P4          = tf.concat([P5_up, P4], axis=-1)
+        P4          = self.P4_block(P4, training=training)
+        P4_up       = self.P4_up(P4, training=training)
+        P3          = tf.concat([P4_up, P3], axis=-1)
+        P3          = self.P3_block(P3, training=training)
+        return P3, P4, P5
+    
 
 class YOLOv3Encoder(tf.keras.Model):
     def __init__(self, 
@@ -103,26 +143,12 @@ class YOLOv3Encoder(tf.keras.Model):
         self.activation     = activation
         self.norm_layer     = norm_layer
 
+
     def build(self, input_shape):
-        self.block0 = self._conv_block([512, 1024, 512, 1024, 512], self.activation, self.norm_layer, name='convolution_extractor_0')
+        self.fpn    = FPNLayer(self.activation, self.norm_layer, name="FPNLayer")
         self.conv_lbbox = self._yolo_head(1024, self.activation, self.norm_layer, name='large_bbox_predictor')
-        self.upsample0 = self._upsample_block(256, 2, self.activation, self.norm_layer, name='upsample_block_0')
-        self.block1 = self._conv_block([256, 512, 256, 512, 256], self.activation, self.norm_layer, name='convolution_extractor_1')
         self.conv_mbbox = self._yolo_head(512, self.activation, self.norm_layer, name='medium_bbox_predictor')
-        self.upsample1 = self._upsample_block(128, 2, self.activation, self.norm_layer, name='upsample_block_1')
-        self.block2 = self._conv_block([128, 256, 128, 256, 128], self.activation, self.norm_layer, name='convolution_extractor_2')
         self.conv_sbbox = self._yolo_head(256, self.activation, self.norm_layer, name='small_bbox_predictor')
-
-    def _conv_block(self, num_filters, activation='leaky', norm_layer='batchnorm', name="conv_block"):
-        return Sequential([
-            ConvolutionBlock(filters, 1 if i % 2 == 0 else 3, False, activation, norm_layer) for i, filters in enumerate(num_filters)
-        ], name=name)
-
-    def _upsample_block(self, filters, upsample_size, activation='leaky', norm_layer='batchnorm', name='upsample_block'):
-        return Sequential([
-            ConvolutionBlock(filters, 1, False, activation, norm_layer),
-            UpSampling2D(size=upsample_size,)
-        ], name=name)
 
     def _yolo_head(self, filters, activation='leaky', norm_layer='batchnorm', name='upsample_block'):
         return Sequential([
@@ -131,20 +157,12 @@ class YOLOv3Encoder(tf.keras.Model):
         ], name=name)
 
     def call(self, inputs, training=False):
-        x1, x2, x3 = self.backbone(inputs, training=training)
-        x3 = self.block0(x3, training=training)
-        layer82 = self.conv_lbbox(x3, training=training)
-
-        x3 = self.upsample0(x3, training=training)
-        x3 = tf.concat([x3, x2], axis=-1)
-        x3 = self.block1(x3, training=training)
-        layer94 = self.conv_mbbox(x3, training=training)
-
-        x3 = self.upsample1(x3, training=training)
-        x3 = tf.concat([x3, x1], axis=-1)
-        x3 = self.block2(x3, training=training)
-        layer106 = self.conv_sbbox(x3, training=training)
-        return layer82, layer94, layer106
+        P3, P4, P5 = self.backbone(inputs, training=training)
+        P3, P4, P5 = self.fpn([P3, P4, P5], training=training)
+        P5_out     = self.conv_lbbox(P5, training=training)
+        P4_out     = self.conv_mbbox(P4, training=training)
+        P3_out     = self.conv_sbbox(P3, training=training)
+        return P5_out, P4_out, P3_out
 
 
 class YOLOv3Decoder:
