@@ -14,3 +14,14 @@ class Augmentor():
         for transform in self.sequence:
             image, bboxes = transform(image, bboxes)
         return image, bboxes
+
+
+class EndemicAugmentor():
+    def __init__(self, target_size=(416, 416, 3), max_bboxes=100):
+        self.aug = Mosaic(target_size=target_size, max_bboxes=max_bboxes)
+        self.sequence = [self.aug]
+
+    def __call__(self, images, bboxes=None):
+        for transform in self.sequence:
+            images, bboxes = transform(images, bboxes)
+        return images, bboxes
