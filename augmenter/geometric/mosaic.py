@@ -3,6 +3,7 @@ import random
 import numpy as np
 
 from utils.auxiliary_processing import random_range
+from visualizer.visual_image import visual_image_with_bboxes
 
 
 class Mosaic:
@@ -175,3 +176,39 @@ class Mosaic:
             if len(new_boxes) > self.max_bboxes: new_boxes = new_boxes[:self.max_bboxes]
             box_data[:len(new_boxes)] = new_boxes
         return new_image, box_data
+    
+    
+if __name__ == "__main__":
+    image_path1 = "/content/sample_data/voc_tiny/train/000017.jpg"
+    image1      = cv2.imread(image_path1)
+    bboxes1     = np.array([[185, 62, 279, 199, 14], [90, 78, 403, 336, 12]])
+
+
+    image_path2 = "/content/sample_data/voc_tiny/train/000141.jpg"
+    image2      = cv2.imread(image_path2)
+    bboxes2     = np.array([[25, 53, 418, 399, 2]])
+
+
+    image_path3 = "/content/sample_data/voc_tiny/train/000147.jpg"
+    image3      = cv2.imread(image_path3)
+    bboxes3     = np.array([[33, 105, 65, 146, 8],
+                            [77, 114, 114, 149, 8],
+                            [146, 125, 175, 150, 8],
+                            [373, 121, 402, 153, 8],
+                            [435, 112, 465, 149, 8]])
+
+
+    image_path4 = "/content/sample_data/voc_tiny/train/000235.jpg"
+    image4      = cv2.imread(image_path4)
+    bboxes4     = np.array([[243, 255, 316, 375, 8],
+                            [40, 266, 277, 375, 10],
+                            [415, 192, 457, 254, 17]])
+
+
+    batch_img = [image1, image2, image3, image4]
+    batch_box = [bboxes1, bboxes2, bboxes3, bboxes4]
+
+
+    augment = Mosaic()
+    images, bboxes = augment(batch_img, batch_box)
+    visual_image_with_bboxes([np.array(images).astype(np.float32)/255.0], [bboxes], ['result'], size=(20, 20))
