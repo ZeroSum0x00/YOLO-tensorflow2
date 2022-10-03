@@ -29,6 +29,8 @@ YOLO_STRIDES                = [8, 16, 32]
 
 YOLO_MAX_BBOXES             = 100
 
+YOLO_IGNORE_THRESHOLD       = 0.5
+
 YOLO_BALANCE_LOSS           = [0.4, 1.0, 4]
 
 YOLO_BOX_RATIO_LOSS         = 0.05
@@ -37,8 +39,21 @@ YOLO_OBJ_RATIO_LOSS         = 5 * (YOLO_TARGET_SIZE[0] * YOLO_TARGET_SIZE[1]) / 
 
 YOLO_CLS_RATIO_LOSS         = 1 * (len(OBJECT_CLASSES) / 80)
 
+YOLO_LABEL_SMOOTHING        = 0.1
+
+YOLO_IOU_METHOD             = 'CIOU'
+
+YOLO_FOCAL_LOSS             = True
+
+YOLO_FOCAL_LOSS_RATIO       = 10
+
+YOLO_FOCAL_ALPHA_RATIO      = 0.25
+
+YOLO_FOCAL_GAMMA_RATIO      = 2
+
 
 # Training hyper-parameters
+#DATA_PATH                   = "/home/vbpo/Desktop/TuNIT/working/Yolo/yolo-repo/datasets"
 DATA_PATH                   = "/home/vbpo/Desktop/TuNIT/working/Yolo/yolo-project/datasets/VOC2017"
 
 DATA_ANNOTATION_PATH        = None
@@ -83,7 +98,7 @@ TRAIN_WEIGHT_TYPE           = None
 
 TRAIN_WEIGHT_OBJECTS        = [        
                                 {
-                                  'path': './saved_weights/20220912-222333/best_weights',
+                                  'path': './saved_weights/20220926-100327/best_weights_mAP',
                                   'stage': 'full',
                                   'custom_objects': None
                                 }
@@ -91,7 +106,7 @@ TRAIN_WEIGHT_OBJECTS        = [
 
 TRAIN_SHOW_FREQUENCY        = 10
 
-TRAIN_SAVE_WEIGHT_FREQUENCY = 10
+TRAIN_SAVE_WEIGHT_FREQUENCY = 50
 
 TRAIN_SAVED_PATH            = './saved_weights/'
 
