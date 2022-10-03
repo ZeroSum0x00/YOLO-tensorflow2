@@ -8,7 +8,7 @@ from tensorflow.keras.callbacks import CSVLogger
 from models.yolov3 import YOLOv3Encoder, YOLOv3Decoder
 from models.architectures.darknet53 import DarkNet53
 from models.yolo import YOLO
-from losses.yolo_loss import YOLOv3Loss
+from losses.yolo_loss import YOLOLoss
 from data_utils.data_flow import get_train_test_data
 from callbacks.warmup_lr import AdvanceWarmUpLearningRate
 from callbacks.loss_history import LossHistory
@@ -38,10 +38,17 @@ def train(data_path              = cfg.DATA_PATH,
           yolo_anchors_mask      = cfg.YOLO_ANCHORS_MASK,
           yolo_strides           = cfg.YOLO_STRIDES,
           max_bboxes             = cfg.YOLO_MAX_BBOXES,
+          ignore_threshold       = cfg.YOLO_IGNORE_THRESHOLD,
           balance_loss           = cfg.YOLO_BALANCE_LOSS,
           box_ratio_loss         = cfg.YOLO_BOX_RATIO_LOSS,
           obj_ratio_loss         = cfg.YOLO_OBJ_RATIO_LOSS,
           cls_ratio_loss         = cfg.YOLO_CLS_RATIO_LOSS,
+          label_smoothing        = cfg.YOLO_LABEL_SMOOTHING,
+          iou_method             = cfg.YOLO_IOU_METHOD,
+          focal_loss             = cfg.YOLO_FOCAL_LOSS,
+          focal_loss_ratio       = cfg.YOLO_FOCAL_LOSS_RATIO,
+          focal_alpha_ratio      = cfg.YOLO_FOCAL_ALPHA_RATIO,
+          focal_gamma_ratio      = cfg.YOLO_FOCAL_GAMMA_RATIO,
           batch_size             = cfg.TRAIN_BATCH_SIZE,
           epochs                 = cfg.TRAIN_EPOCHS,
           momentum               = cfg.TRAIN_MOMENTUM,
@@ -104,14 +111,21 @@ def train(data_path              = cfg.DATA_PATH,
             model.load_models(weight_objects)
 
 
-    loss = YOLOv3Loss(input_shape  = input_shape, 
-                      anchors      = yolo_anchors, 
-                      anchors_mask = yolo_anchors_mask, 
-                      num_classes  = num_classes, 
-                      balance      = balance_loss,
-                      box_ratio    = box_ratio_loss, 
-                      obj_ratio    = obj_ratio_loss,
-                      cls_ratio    = cls_ratio_loss)
+    loss = YOLOLoss(input_shape       = input_shape, 
+                    anchors           = yolo_anchors, 
+                    anchors_mask      = yolo_anchors_mask, 
+                    num_classes       = num_classes, 
+                    ignore_threshold  = ignore_threshold,
+                    balance           = balance_loss,
+                    box_ratio         = box_ratio_loss, 
+                    obj_ratio         = obj_ratio_loss,
+                    cls_ratio         = cls_ratio_loss,
+                    label_smoothing   = label_smoothing,
+                    iou_method        = iou_method,
+                    focal_loss        = focal_loss,
+                    focal_loss_ratio  = focal_loss_ratio,
+                    focal_alpha_ratio = focal_alpha_ratio,
+                    focal_gamma_ratio = focal_gamma_ratio)
     
     nbs             = 64
     lr_limit_max    = 5e-2 
@@ -177,10 +191,17 @@ if __name__ == '__main__':
           yolo_anchors_mask      = cfg.YOLO_ANCHORS_MASK,
           yolo_strides           = cfg.YOLO_STRIDES,
           max_bboxes             = cfg.YOLO_MAX_BBOXES,
+          ignore_threshold       = cfg.YOLO_IGNORE_THRESHOLD,
           balance_loss           = cfg.YOLO_BALANCE_LOSS,
           box_ratio_loss         = cfg.YOLO_BOX_RATIO_LOSS,
           obj_ratio_loss         = cfg.YOLO_OBJ_RATIO_LOSS,
           cls_ratio_loss         = cfg.YOLO_CLS_RATIO_LOSS,
+          label_smoothing        = cfg.YOLO_LABEL_SMOOTHING,
+          iou_method             = cfg.YOLO_IOU_METHOD,
+          focal_loss             = cfg.YOLO_FOCAL_LOSS,
+          focal_loss_ratio       = cfg.YOLO_FOCAL_LOSS_RATIO,
+          focal_alpha_ratio      = cfg.YOLO_FOCAL_ALPHA_RATIO,
+          focal_gamma_ratio      = cfg.YOLO_FOCAL_GAMMA_RATIO,
           batch_size             = cfg.TRAIN_BATCH_SIZE,
           epochs                 = cfg.TRAIN_EPOCHS,
           momentum               = cfg.TRAIN_MOMENTUM,
