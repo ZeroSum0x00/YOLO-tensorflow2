@@ -72,11 +72,11 @@ class YOLOLoss(tf.keras.losses.Loss):
             object_mask_bool = K.cast(object_mask, 'bool')
 
             def loop_body(b, ignore_mask):
-                true_box = tf.boolean_mask(y_true[l][b, ..., 0:4], object_mask_bool[b,...,0])
+                true_box = tf.boolean_mask(y_true[l][b, ..., 0:4], object_mask_bool[b, ..., 0])
                 iou = box_iou(pred_box[b], true_box)
                 best_iou = K.max(iou, axis=-1)
                 ignore_mask = ignore_mask.write(b, K.cast(best_iou < self.ignore_threshold, K.dtype(true_box)))
-                return b+1, ignore_mask
+                return b + 1, ignore_mask
 
             _, ignore_mask = tf.while_loop(lambda b, *args: b < m, loop_body, [0, ignore_mask])
 
@@ -97,16 +97,15 @@ class YOLOLoss(tf.keras.losses.Loss):
 
                 raw_true_wh     = K.switch(object_mask, raw_true_wh, K.zeros_like(raw_true_wh))
 
-                xy_loss         = object_mask * box_loss_scale * K.binary_crossentropy(raw_true_xy, raw_pred[...,0:2], from_logits=True)
+                xy_loss         = object_mask * box_loss_scale * K.binary_crossentropy(raw_true_xy, raw_pred[..., 0:2], from_logits=True)
 
-                wh_loss         = object_mask * box_loss_scale * 0.5 * K.square(raw_true_wh - raw_pred[...,2:4])
+                wh_loss         = object_mask * box_loss_scale * 0.5 * K.square(raw_true_wh - raw_pred[..., 2:4])
                 location_loss   = (K.sum(xy_loss) + K.sum(wh_loss)) * 0.1
             
             if self.focal_loss:
-                confidence_loss = (object_mask * (tf.ones_like(raw_pred[...,4:5]) - tf.sigmoid(raw_pred[...,4:5])) ** self.focal_gamma_ratio * self.focal_alpha_ratio * K.binary_crossentropy(object_mask, raw_pred[...,4:5], from_logits=True) + (1 - object_mask) * ignore_mask * tf.sigmoid(raw_pred[...,4:5]) ** self.focal_gamma_ratio * (1 - self.focal_alpha_ratio) * K.binary_crossentropy(object_mask, raw_pred[...,4:5], from_logits=True)) * self.focal_loss_ratio
+                confidence_loss = (object_mask * (tf.ones_like(raw_pred[..., 4:5]) - tf.sigmoid(raw_pred[..., 4:5])) ** self.focal_gamma_ratio * self.focal_alpha_ratio * K.binary_crossentropy(object_mask, raw_pred[..., 4:5], from_logits=True) + (1 - object_mask) * ignore_mask * tf.sigmoid(raw_pred[..., 4:5]) ** self.focal_gamma_ratio * (1 - self.focal_alpha_ratio) * K.binary_crossentropy(object_mask, raw_pred[..., 4:5], from_logits=True)) * self.focal_loss_ratio
             else:
-                confidence_loss = object_mask * K.binary_crossentropy(object_mask, raw_pred[...,4:5], from_logits=True) + \
-                            (1 - object_mask) * K.binary_crossentropy(object_mask, raw_pred[...,4:5], from_logits=True) * ignore_mask
+                confidence_loss = object_mask * K.binary_crossentropy(object_mask, raw_pred[..., 4:5], from_logits=True) + (1 - object_mask) * K.binary_crossentropy(object_mask, raw_pred[..., 4:5], from_logits=True) * ignore_mask
                 
             class_loss      = object_mask * K.binary_crossentropy(true_class_probs, raw_pred[...,5:], from_logits=True)
 
