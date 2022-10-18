@@ -45,14 +45,6 @@ endemic_augmenter = {
         'auxiliary': [ResizePadded(target_size=target_size, max_boxes=max_bboxes, jitter=.3, flexible=True)],
         'merge': [Mixup(target_size=target_size, max_bboxes=max_bboxes)]
     },
-    'valid': {
-        'main': [ResizePadded(target_size=target_size, max_boxes=max_bboxes, jitter=.3, flexible=False)],
-        'auxiliary': [ResizePadded(target_size=target_size, max_boxes=max_bboxes, jitter=.3, flexible=False)],
-        'merge': [Mixup(target_size=target_size, max_bboxes=max_bboxes)]
-    },
-    'test': {
-        'main': [ResizePadded(target_size=target_size, max_boxes=max_bboxes, jitter=.3, flexible=False)],
-        'auxiliary': [ResizePadded(target_size=target_size, max_boxes=max_bboxes, jitter=.3, flexible=False)],
-        'merge': [Mixup(target_size=target_size, max_bboxes=max_bboxes)]
-    }
+    'valid': None,
+    'test':  None
 }
