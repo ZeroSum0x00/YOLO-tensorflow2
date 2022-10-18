@@ -13,6 +13,10 @@ YOLO_ACTIVATION                 = 'leaky'
 
 YOLO_NORMALIZATION              = 'batchnorm'
 
+YOLO_BACKBONE_ACTIVATION        = 'mish'
+
+YOLO_BACKBONE_NORMALIZATION     = 'batchnorm'
+
 YOLO_BACKBONE_WEIGHTS           = "/home/vbpo/Desktop/TuNIT/working/Yolo/yolo-project/saved_weights/yolov3.weights"
 
 YOLO_TARGET_SIZE                = [416, 416, 3]
