@@ -3,10 +3,10 @@ from configs import base_config as cfg
 
 
 class Augmentor:
-    def __init__(self, augment_objects, target_size=(416, 416, 3), max_bboxes=100, phase='train'):
-        self.sequence_transform  = augment_objects[phase]['main']
-        self.auxiliary_transform = augment_objects[phase]['auxiliary']
-        self.merger_transform    = augment_objects[phase]['merge']
+    def __init__(self, augment_objects, target_size=(416, 416, 3), max_bboxes=100):
+        self.sequence_transform  = augment_objects['main']
+        self.auxiliary_transform = augment_objects['auxiliary']
+        self.merger_transform    = augment_objects['merge']
 
     def __call__(self, images, bboxes=None, auxiliary_image=None, auxiliary_bboxes=None):
         if self.sequence_transform:
@@ -25,10 +25,10 @@ class Augmentor:
 
 
 class EndemicAugmentor:
-    def __init__(self, augment_objects, target_size=(416, 416, 3), max_bboxes=100, phase='train'):
-        self.sequence_transform  = augment_objects[phase]['main']
-        self.auxiliary_transform = augment_objects[phase]['auxiliary']
-        self.merger_transform    = augment_objects[phase]['merge']
+    def __init__(self, augment_objects, target_size=(416, 416, 3), max_bboxes=100):
+        self.sequence_transform  = augment_objects['main']
+        self.auxiliary_transform = augment_objects['auxiliary']
+        self.merger_transform    = augment_objects['merge']
 
     def __call__(self, batch_image, batch_bboxes=None, auxiliary_image=None, auxiliary_bboxes=None):
         if self.sequence_transform:
