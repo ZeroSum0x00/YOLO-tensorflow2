@@ -8,15 +8,17 @@ from visualizer.visual_image import visual_image, visual_image_with_bboxes
 
 class Flip:
     def __init__(self, mode='horizontal', max_bboxes=100):
-        self.mode       = mode
+        self.mode = mode
         self.max_bboxes = max_bboxes
 
     def __call__(self, image, bboxes):
         h, w, _ = image.shape
-        if self.mode.lower() == 'horizontal':
+        horizontal_list = ['horizontal', 'h']
+        vertical_list   = ['vertical', 'v']
+        if self.mode.lower() in horizontal_list:
             image = cv2.flip(image, 1)
             bboxes[:, [0,2]] = w - bboxes[:, [2,0]]
-        elif self.mode.lower() == 'vertical':
+        elif self.mode.lower() in vertical_list:
             image = cv2.flip(image, 0)
             bboxes[:, [3,1]] = h - bboxes[:, [3,1]]
 
