@@ -13,7 +13,7 @@ YOLO_ACTIVATION                 = 'leaky'
 
 YOLO_NORMALIZATION              = 'batchnorm'
 
-YOLO_BACKBONE_ACTIVATION        = 'mish'
+YOLO_BACKBONE_ACTIVATION        = 'leaky'
 
 YOLO_BACKBONE_NORMALIZATION     = 'batchnorm'
 
