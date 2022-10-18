@@ -7,7 +7,7 @@ from tensorflow.keras.utils import Sequence
 from sklearn.utils import shuffle
 
 from data_utils.data_processing import extract_data_folder, get_data, Normalizer, preprocess_true_boxes
-from data_utils.data_augmentation import Augmentor
+from data_utils.data_augmentation import Augmentor, EndemicAugmentor
 from utils.logger import logger
 from configs import base_config as cfg
 
