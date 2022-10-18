@@ -1,11 +1,10 @@
 import cv2
 import numpy as np
-from augmenter.augmentation import *
 from configs import base_config as cfg
 
 
-target_size=(416, 416, 3)
-max_bboxes=100
+target_size = cfg.YOLO_TARGET_SIZE
+max_bboxes  = cfg.YOLO_MAX_BBOXES
 
 basic_augmenter = {
     'train': {
