@@ -8,38 +8,29 @@ from visualizer.visual_image import visual_image, visual_image_with_bboxes
 
 class Resize:
     def __init__(self, target_size=(416, 416, 3), max_bboxes=500, interpolation=None):
-        self.target_size   = target_size[:-1] if len(target_size) == 3 else target_size
+        self.target_size   = target_size
         self.max_bboxes    = max_bboxes
         self.interpolation = interpolation
 
     def __call__(self, image, bboxes):
         h, w, _    = image.shape
-        ih, iw  = self.target_size
+        ih, iw, _  = self.target_size
+        print(ih)
+        image = cv2.resize(image, dsize=(iw, ih), interpolation=self.interpolation)
         scale = min(iw/w, ih/h)
-        image = cv2.resize(image, dsize=self.target_size, interpolation=self.interpolation)
-        flip = random_range() < .5
-        if flip: 
-            image = cv2.flip(image, 1)
-
+        nw, nh  = int(scale * w), int(scale * h)
+        dw, dh = (iw - nw) // 2, (ih - nh) // 2
         box_data = np.zeros((self.max_bboxes, 5))
         if len(bboxes) > 0:
             np.random.shuffle(bboxes)
-            bboxes[:, [0, 2]] = bboxes[:, [0, 2]] * iw / w
-            bboxes[:, [1, 3]] = bboxes[:, [1, 3]] * ih / h
-
-            if flip: 
-                bboxes[:, [0,2]] = iw - bboxes[:, [2,0]]
-
+            bboxes[:, [0, 2]] = np.round(bboxes[:, [0, 2]] * (iw/w), decimals=0)
+            bboxes[:, [1, 3]] = np.round(bboxes[:, [1, 3]] * (ih/h), decimals=0)
             bboxes[:, 0:2][bboxes[:, 0:2] < 0] = 0
-            box_w = bboxes[:, 2] - bboxes[:, 0]
-            box_h = bboxes[:, 3] - bboxes[:, 1]
-            bboxes = bboxes[np.logical_and(box_w > 1, box_h > 1)]
-
             if len(bboxes) > self.max_bboxes: 
                 bboxes = bboxes[:self.max_bboxes]
 
             box_data[:len(bboxes)] = bboxes
-        return image, bboxes
+        return image, box_data
       
 
 class ResizePadded:
