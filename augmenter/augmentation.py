@@ -1,10 +1,16 @@
 import cv2
 import numpy as np
-from configs import base_config as cfg
 
+from augmenter.geometric.resize import Resize, ResizePadded
+from augmenter.geometric.flip import Flip, RandomFlip
+from augmenter.geometric.mosaic import Mosaic
+from augmenter.geometric.mixup import Mixup
 
-target_size = cfg.YOLO_TARGET_SIZE
-max_bboxes  = cfg.YOLO_MAX_BBOXES
+from augmenter.photometric.light_photometric_ops import LightIntensityChange
+
+target_size=(416, 416, 3)
+max_bboxes=100
+
 
 basic_augmenter = {
     'train': {
