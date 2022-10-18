@@ -44,7 +44,7 @@ class YOLOLoss(tf.keras.losses.Loss):
         self.focal_gamma_ratio = focal_gamma_ratio
 
     def _smooth_labels(self, y_true, label_smoothing):
-        label_smoothing = K.constant(label_smoothing, dtype=K.float32)
+        label_smoothing = K.constant(label_smoothing, dtype=tf.float32)
         return y_true * (1.0 - label_smoothing) + label_smoothing / self.num_classes
     
     def __call__(self, y_true, y_pred):
