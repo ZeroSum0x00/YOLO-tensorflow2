@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 class WarmUpLearningRate(tf.keras.callbacks.Callback):
     def __init__(self, 
                  steps_per_epoch, 
-                 epochs        = cfg.TRAIN_EPOCHS,
+                 epochs        = cfg.TRAIN_EPOCH_END,
                  lr_init       = cfg.TRAIN_LR_INIT, 
                  lr_end        = cfg.TRAIN_LR_END,
                  warmup_epochs = cfg.TRAIN_WARMUP_EPOCH_RATIO):
@@ -34,7 +34,7 @@ class AdvanceWarmUpLearningRate(tf.keras.callbacks.Callback):
     def __init__(self, 
                  lr_init            = cfg.TRAIN_LR_INIT, 
                  lr_end             = cfg.TRAIN_LR_END, 
-                 epochs             = cfg.TRAIN_EPOCHS,
+                 epochs             = cfg.TRAIN_EPOCH_END,
                  warmup_epoch_ratio = cfg.TRAIN_WARMUP_EPOCH_RATIO, 
                  warmup_lr_ratio    = cfg.TRAIN_WARMUP_LR_RATIO, 
                  no_aug_epoch_ratio = cfg.WITHOUT_AUG_EPOCH_RATIO,
@@ -92,7 +92,7 @@ class BasicReduceLearningRate(tf.keras.callbacks.Callback):
     def __init__(self, 
                  lr_init   = cfg.TRAIN_LR_INIT, 
                  lr_end    = cfg.TRAIN_LR_END, 
-                 epochs    = cfg.TRAIN_EPOCHS, 
+                 epochs    = cfg.TRAIN_EPOCH_END, 
                  num_steps = 10):
         self.decay_rate  = (lr_end / lr_init) ** (1 / (num_steps - 1))
         step_size   = epochs / num_steps
