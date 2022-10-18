@@ -50,7 +50,8 @@ def train(data_path              = cfg.DATA_PATH,
           focal_alpha_ratio      = cfg.YOLO_FOCAL_ALPHA_RATIO,
           focal_gamma_ratio      = cfg.YOLO_FOCAL_GAMMA_RATIO,
           batch_size             = cfg.TRAIN_BATCH_SIZE,
-          epochs                 = cfg.TRAIN_EPOCHS,
+          init_epoch             = cfg.TRAIN_EPOCH_INIT,
+          end_epoch              = cfg.TRAIN_EPOCH_END,
           momentum               = cfg.TRAIN_MOMENTUM,
           nesterov               = cfg.TRAIN_NESTEROV,
           lr_init                = cfg.TRAIN_LR_INIT,
@@ -66,22 +67,28 @@ def train(data_path              = cfg.DATA_PATH,
     
     TRAINING_TIME_PATH = create_folder_weights(saved_path)
 
-    train_generator, val_generator = get_train_test_data(data_zipfile=data_path, 
-                                                                         dst_dir=data_dst_path,
-                                                                         classes=classes, 
-                                                                         target_size=input_shape, 
-                                                                         batch_size=batch_size, 
-                                                                         yolo_strides=yolo_strides,
-                                                                         yolo_anchors=yolo_anchors,
-                                                                         yolo_anchors_mask=yolo_anchors_mask,
-                                                                         max_bboxes=max_bboxes,
-                                                                         augmentor=data_augmentation,
-                                                                         normalizer=data_normalizer,
-                                                                         data_type=data_type,
-                                                                         check_data=check_data, 
-                                                                         load_memory=load_memory,
-                                                                         exclude_difficult=exclude_difficult,
-                                                                         exclude_truncated=exclude_truncated)
+    train_generator, val_generator = get_train_test_data(data_zipfile            = data_path, 
+                                                         dst_dir                 = data_dst_path,
+                                                         classes                 = classes, 
+                                                         target_size             = input_shape, 
+                                                         batch_size              = batch_size, 
+                                                         yolo_strides            = yolo_strides,
+                                                         yolo_anchors            = yolo_anchors,
+                                                         yolo_anchors_mask       = yolo_anchors_mask,
+                                                         max_bboxes              = max_bboxes,
+                                                         init_epoch              = init_epoch,
+                                                         end_epoch               = end_epoch,
+                                                         augmentor               = data_augmentation,
+                                                         endemic_augmentor       = endemic_augmentor,
+                                                         endemic_augmentor_proba = endemic_augmentor_proba,
+                                                         endemic_augmentor_ratio = endemic_augmentor_ratio,
+                                                         normalizer              = data_normalizer,
+                                                         data_type               = data_type,
+                                                         check_data              = check_data, 
+                                                         load_memory             = load_memory,
+                                                         exclude_difficult       = exclude_difficult,
+                                                         exclude_truncated       = exclude_truncated)
+
     num_classes = len(classes)
     
     backbone = DarkNet53(input_shape=input_shape, 
@@ -153,7 +160,7 @@ def train(data_path              = cfg.DATA_PATH,
     
     logger = CSVLogger(TRAINING_TIME_PATH + 'train_history.csv', separator=",", append=True)
 
-    warmup_lr = AdvanceWarmUpLearningRate(lr_init=Init_lr_fit, lr_end=Min_lr_fit, epochs=epochs, result_path=TRAINING_TIME_PATH)
+    warmup_lr = AdvanceWarmUpLearningRate(lr_init=Init_lr_fit, lr_end=Min_lr_fit, epochs=end_epoch, result_path=TRAINING_TIME_PATH)
     
     callbacks = [eval_callback, history, checkpoint, logger, warmup_lr]
     
@@ -166,7 +173,8 @@ def train(data_path              = cfg.DATA_PATH,
               steps_per_epoch     = train_generator.n // batch_size,
               validation_data     = val_generator,
               validation_steps    = val_generator.n // batch_size,
-              epochs              = epochs,
+              epochs              = end_epoch,
+              initial_epoch       = init_epoch,
               callbacks           = callbacks)
     model.save_weights(TRAINING_TIME_PATH + 'best_weights', save_format="tf")
 
