@@ -113,13 +113,7 @@ class ResizePadded:
           image_temp[:hpd, :wpd] = image_paded
           image_paded = image_temp
 
-
       image = image_paded
-
-      flip = random_range() < .5
-      if flip: 
-          image = cv2.flip(image, 1)
-
       image_data      = np.array(image, np.uint8)
 
       box_data = np.zeros((self.max_boxes, 5))
@@ -127,10 +121,6 @@ class ResizePadded:
           np.random.shuffle(bboxes)
           bboxes[:, [0,2]] = bboxes[:, [0, 2]]*nw/w + dw
           bboxes[:, [1,3]] = bboxes[:, [1, 3]]*nh/h + dh
-
-          if flip: 
-              bboxes[:, [0,2]] = iw - bboxes[:, [2,0]]
-
           bboxes[:, 0:2][bboxes[:, 0:2] < 0] = 0
           bboxes[:, 2][bboxes[:, 2] > iw] = iw
           bboxes[:, 3][bboxes[:, 3] > ih] = ih
