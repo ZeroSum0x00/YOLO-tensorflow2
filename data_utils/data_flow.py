@@ -110,8 +110,8 @@ class Train_Data_Sequence(Sequence):
                  endemic_augmentor       = cfg.DATA_ENDEMIC_AUGMENTATION['train'],
                  endemic_augmentor_proba = cfg.DATA_ENDEMIC_AUGMENTATION_PROBA,
                  endemic_augmentor_ratio = cfg.DATA_ENDEMIC_AUGMENTATION_RATIO,
-                 init_epoch              = 0,
-                 end_epoch               = 300):
+                 init_epoch              = cfg.TRAIN_EPOCH_INIT,
+                 end_epoch               = cfg.TRAIN_EPOCH_END):
         
         self.data_path = dataset['data_path']
         self.dataset = dataset['data_extractor']
@@ -228,8 +228,8 @@ class Valid_Data_Sequence(Sequence):
                  endemic_augmentor       = cfg.DATA_ENDEMIC_AUGMENTATION['valid'],
                  endemic_augmentor_proba = cfg.DATA_ENDEMIC_AUGMENTATION_PROBA,
                  endemic_augmentor_ratio = cfg.DATA_ENDEMIC_AUGMENTATION_RATIO,
-                 init_epoch              = 0,
-                 end_epoch               = 300):
+                 init_epoch              = cfg.TRAIN_EPOCH_INIT,
+                 end_epoch               = cfg.TRAIN_EPOCH_END):
         
         self.data_path = dataset['data_path']
         self.dataset = dataset['data_extractor']
@@ -343,8 +343,8 @@ class Test_Data_Sequence(Sequence):
                  endemic_augmentor       = cfg.DATA_ENDEMIC_AUGMENTATION['test'],
                  endemic_augmentor_proba = cfg.DATA_ENDEMIC_AUGMENTATION_PROBA,
                  endemic_augmentor_ratio = cfg.DATA_ENDEMIC_AUGMENTATION_RATIO,
-                 init_epoch              = 0,
-                 end_epoch               = 300):
+                 init_epoch              = cfg.TRAIN_EPOCH_INIT,
+                 end_epoch               = cfg.TRAIN_EPOCH_END):
         
         self.data_path = dataset['data_path']
         self.dataset = dataset['data_extractor']
