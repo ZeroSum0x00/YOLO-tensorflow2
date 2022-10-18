@@ -13,22 +13,27 @@ from utils.logger import logger
 from configs import base_config as cfg
 
 
-def get_train_test_data(data_zipfile      = cfg.DATA_PATH, 
-                        dst_dir           = cfg.DATA_DESTINATION_PATH,
-                        classes           = cfg.OBJECT_CLASSES, 
-                        target_size       = cfg.YOLO_TARGET_SIZE, 
-                        batch_size        = cfg.TRAIN_BATCH_SIZE, 
-                        yolo_strides      = cfg.YOLO_STRIDES,
-                        yolo_anchors      = cfg.YOLO_ANCHORS,
-                        yolo_anchors_mask = cfg.YOLO_ANCHORS_MASK,
-                        max_bboxes        = cfg.YOLO_MAX_BBOXES,
-                        augmentor         = cfg.DATA_AUGMENTATION,
-                        normalizer        = cfg.DATA_NORMALIZER,
-                        data_type         = cfg.DATA_TYPE,
-                        check_data        = cfg.CHECK_DATA, 
-                        load_memory       = cfg.DATA_LOAD_MEMORY,
-                        exclude_difficult = cfg.DATA_EXCLUDE_DIFFICULT,
-                        exclude_truncated = cfg.DATA_EXCLUDE_TRUNCATED,
+def get_train_test_data(data_zipfile            = cfg.DATA_PATH, 
+                        dst_dir                 = cfg.DATA_DESTINATION_PATH,
+                        classes                 = cfg.OBJECT_CLASSES, 
+                        target_size             = cfg.YOLO_TARGET_SIZE, 
+                        batch_size              = cfg.TRAIN_BATCH_SIZE, 
+                        yolo_strides            = cfg.YOLO_STRIDES,
+                        yolo_anchors            = cfg.YOLO_ANCHORS,
+                        yolo_anchors_mask       = cfg.YOLO_ANCHORS_MASK,
+                        max_bboxes              = cfg.YOLO_MAX_BBOXES,
+                        init_epoch              = cfg.TRAIN_EPOCH_INIT,
+                        end_epoch               = cfg.TRAIN_EPOCH_END,
+                        augmentor               = cfg.DATA_AUGMENTATION,
+                        endemic_augmentor       = cfg.DATA_ENDEMIC_AUGMENTATION,
+                        endemic_augmentor_proba = cfg.DATA_ENDEMIC_AUGMENTATION_PROBA,
+                        endemic_augmentor_ratio = cfg.DATA_ENDEMIC_AUGMENTATION_RATIO,
+                        normalizer              = cfg.DATA_NORMALIZER,
+                        data_type               = cfg.DATA_TYPE,
+                        check_data              = cfg.CHECK_DATA, 
+                        load_memory             = cfg.DATA_LOAD_MEMORY,
+                        exclude_difficult       = cfg.DATA_EXCLUDE_DIFFICULT,
+                        exclude_truncated       = cfg.DATA_EXCLUDE_TRUNCATED,
                         *args, **kwargs):
                         
     data_folder = extract_data_folder(data_zipfile, dst_dir)
@@ -41,15 +46,20 @@ def get_train_test_data(data_zipfile      = cfg.DATA_PATH,
                           exclude_difficult = exclude_difficult,
                           exclude_truncated = exclude_truncated)
     train_generator = Train_Data_Sequence(data_train, 
-                                          target_size       = target_size, 
-                                          batch_size        = batch_size, 
-                                          yolo_strides      = yolo_strides,
-                                          classes           = classes,
-                                          yolo_anchors      = yolo_anchors,
-                                          yolo_anchors_mask = yolo_anchors_mask,
-                                          max_bboxes        = max_bboxes,
-                                          augmentor='train',
-                                          normalizer=normalizer,
+                                          target_size             = target_size, 
+                                          batch_size              = batch_size, 
+                                          yolo_strides            = yolo_strides,
+                                          classes                 = classes,
+                                          yolo_anchors            = yolo_anchors,
+                                          yolo_anchors_mask       = yolo_anchors_mask,
+                                          max_bboxes              = max_bboxes,
+                                          augmentor               = augmentor['train'],
+                                          endemic_augmentor       = endemic_augmentor['train'],
+                                          endemic_augmentor_proba = endemic_augmentor_proba,
+                                          endemic_augmentor_ratio = endemic_augmentor_ratio,
+                                          init_epoch              = init_epoch,
+                                          end_epoch               = end_epoch,
+                                          normalizer              = normalizer,
                                           *args, **kwargs)
 
     data_valid = get_data(data_folder,
@@ -61,15 +71,20 @@ def get_train_test_data(data_zipfile      = cfg.DATA_PATH,
                           exclude_difficult = exclude_difficult,
                           exclude_truncated = exclude_truncated)
     valid_generator = Valid_Data_Sequence(data_valid, 
-                                          target_size       = target_size, 
-                                          batch_size        = batch_size, 
-                                          yolo_strides      = yolo_strides,
-                                          classes           = classes,
-                                          yolo_anchors      = yolo_anchors,
-                                          yolo_anchors_mask = yolo_anchors_mask,
-                                          max_bboxes        = max_bboxes,
-                                          augmentor         = 'validation',
-                                          normalizer        = normalizer,
+                                          target_size             = target_size, 
+                                          batch_size              = batch_size, 
+                                          yolo_strides            = yolo_strides,
+                                          classes                 = classes,
+                                          yolo_anchors            = yolo_anchors,
+                                          yolo_anchors_mask       = yolo_anchors_mask,
+                                          max_bboxes              = max_bboxes,
+                                          augmentor               = augmentor['valid'],
+                                          endemic_augmentor       = endemic_augmentor['valid'],
+                                          endemic_augmentor_proba = endemic_augmentor_proba,
+                                          endemic_augmentor_ratio = endemic_augmentor_ratio,
+                                          init_epoch              = init_epoch,
+                                          end_epoch               = end_epoch,
+                                          normalizer              = normalizer,
                                           *args, **kwargs)
     
 #     data_test = get_data(data_folder,
@@ -144,7 +159,6 @@ class Train_Data_Sequence(Sequence):
         self.anchors = np.array(yolo_anchors)
         self.yolo_anchors_mask = yolo_anchors_mask
 
-        self.mixup_aug = True
         self.endemic_augmentor_proba = endemic_augmentor_proba
         self.endemic_augmentor_ratio = endemic_augmentor_ratio
         self.current_epoch = init_epoch
@@ -177,7 +191,7 @@ class Train_Data_Sequence(Sequence):
                     images.append(image)
                     bboxes.append(box)
 
-                if self.mixup_aug and random_range() < self.endemic_augmentor_proba:
+                if random_range() < self.endemic_augmentor_proba:
                     auxiliary_sample = random.sample(self.dataset, 1)[0]
                     auxiliary_image, auxiliary_bboxes = self.get_samples(auxiliary_sample)
                     images, bboxes  = self.endemic_augmentor(images, bboxes, auxiliary_image, auxiliary_bboxes)
@@ -189,7 +203,7 @@ class Train_Data_Sequence(Sequence):
                 images = cv2.imread(img_path)
                 bboxes = np.array(sample['bboxes'])
 
-            if self.augmentor and self.mixup_aug and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
+            if self.augmentor and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
                 auxiliary_sample = random.sample(self.dataset, 1)[0]
                 auxiliary_image, auxiliary_bboxes = self.get_samples(auxiliary_sample)
                 images, bboxes  = self.augmentor(images, bboxes, auxiliary_image, auxiliary_bboxes)
@@ -260,7 +274,6 @@ class Valid_Data_Sequence(Sequence):
         self.anchors = np.array(yolo_anchors)
         self.yolo_anchors_mask = yolo_anchors_mask
 
-        self.mixup_aug = True
         self.endemic_augmentor_proba = endemic_augmentor_proba
         self.endemic_augmentor_ratio = endemic_augmentor_ratio
         self.current_epoch = init_epoch
@@ -293,7 +306,7 @@ class Valid_Data_Sequence(Sequence):
                     images.append(image)
                     bboxes.append(box)
 
-                if self.mixup_aug and random_range() < self.endemic_augmentor_proba:
+                if random_range() < self.endemic_augmentor_proba:
                     auxiliary_sample = random.sample(self.dataset, 1)[0]
                     auxiliary_image, auxiliary_bboxes = self.get_samples(auxiliary_sample)
                     images, bboxes  = self.endemic_augmentor(images, bboxes, auxiliary_image, auxiliary_bboxes)
@@ -305,7 +318,7 @@ class Valid_Data_Sequence(Sequence):
                 images = cv2.imread(img_path)
                 bboxes = np.array(sample['bboxes'])
 
-            if self.augmentor and self.mixup_aug and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
+            if self.augmentor and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
                 auxiliary_sample = random.sample(self.dataset, 1)[0]
                 auxiliary_image, auxiliary_bboxes = self.get_samples(auxiliary_sample)
                 images, bboxes  = self.augmentor(images, bboxes, auxiliary_image, auxiliary_bboxes)
@@ -375,7 +388,6 @@ class Test_Data_Sequence(Sequence):
         self.anchors = np.array(yolo_anchors)
         self.yolo_anchors_mask = yolo_anchors_mask
 
-        self.mixup_aug = True
         self.endemic_augmentor_proba = endemic_augmentor_proba
         self.endemic_augmentor_ratio = endemic_augmentor_ratio
         self.current_epoch = init_epoch
@@ -408,7 +420,7 @@ class Test_Data_Sequence(Sequence):
                     images.append(image)
                     bboxes.append(box)
 
-                if self.mixup_aug and random_range() < self.endemic_augmentor_proba:
+                if random_range() < self.endemic_augmentor_proba:
                     auxiliary_sample = random.sample(self.dataset, 1)[0]
                     auxiliary_image, auxiliary_bboxes = self.get_samples(auxiliary_sample)
                     images, bboxes  = self.endemic_augmentor(images, bboxes, auxiliary_image, auxiliary_bboxes)
@@ -420,7 +432,7 @@ class Test_Data_Sequence(Sequence):
                 images = cv2.imread(img_path)
                 bboxes = np.array(sample['bboxes'])
 
-            if self.augmentor and self.mixup_aug and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
+            if self.augmentor and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
                 auxiliary_sample = random.sample(self.dataset, 1)[0]
                 auxiliary_image, auxiliary_bboxes = self.get_samples(auxiliary_sample)
                 images, bboxes  = self.augmentor(images, bboxes, auxiliary_image, auxiliary_bboxes)
