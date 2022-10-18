@@ -162,7 +162,7 @@ def train_yolov3(data_path                   = cfg.DATA_PATH,
     
     logger = CSVLogger(TRAINING_TIME_PATH + 'train_history.csv', separator=",", append=True)
 
-    warmup_lr = AdvanceWarmUpLearningRate(lr_init=Init_lr_fit, lr_end=Min_lr_fit, epochs=epochs, result_path=TRAINING_TIME_PATH)
+    warmup_lr = AdvanceWarmUpLearningRate(lr_init=Init_lr_fit, lr_end=Min_lr_fit, epochs=end_epoch, result_path=TRAINING_TIME_PATH)
     
     callbacks = [eval_callback, history, checkpoint, logger, warmup_lr]
     
@@ -175,7 +175,8 @@ def train_yolov3(data_path                   = cfg.DATA_PATH,
               steps_per_epoch     = train_generator.n // batch_size,
               validation_data     = val_generator,
               validation_steps    = val_generator.n // batch_size,
-              epochs              = epochs,
+              epochs              = end_epoch,
+              initial_epoch       = init_epoch,
               callbacks           = callbacks)
     model.save_weights(TRAINING_TIME_PATH + 'best_weights', save_format="tf")
 
