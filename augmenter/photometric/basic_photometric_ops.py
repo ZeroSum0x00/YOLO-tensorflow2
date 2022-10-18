@@ -2,9 +2,9 @@ import cv2
 import numpy as np
 
 
-class BasicPhotometric:
+class LightIntensityChange:
     def __init__(self, hue=.1, sat=0.7, val=0.4):
-        self.hue       = hue`
+        self.hue       = hue
         self.sat       = sat
         self.val       = val
         
@@ -30,7 +30,7 @@ if __name__ == "__main__":
                             [309, 130, 472, 362, 11],
                             [1, 2, 500, 381, 8]])
 
-    augment = BasicPhotometric()
+    augment = LightIntensityChange()
     for i in range(10):
         images, bboxes = augment(image, bboxes)
         visual_image_with_bboxes([np.array(images).astype(np.float32)/255.0], [bboxes], ['result'], size=(20, 20))
