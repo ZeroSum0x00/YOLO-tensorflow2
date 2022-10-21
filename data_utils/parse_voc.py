@@ -10,17 +10,39 @@ class ParseVOC:
                  labels            = cfg.OBJECT_CLASSES,
                  load_memory       = cfg.DATA_LOAD_MEMORY, 
                  exclude_difficult = cfg.DATA_EXCLUDE_DIFFICULT, 
-                 exclude_truncated = cfg.DATA_EXCLUDE_TRUNCATED):
+                 exclude_truncated = cfg.DATA_EXCLUDE_TRUNCATED,
+                 check_data        = cfg.CHECK_DATA):
         self.data_dir          = data_dir
         self.labels            = labels
         self.load_memory       = load_memory
         self.exclude_difficult = exclude_difficult
         self.exclude_truncated = exclude_truncated
+        self.check_data        = check_data
         
     def __call__(self, xml_files):
         data_extraction = []
         for xml_file in xml_files:
-            xml_root = ET.parse(os.path.join(self.data_dir, xml_file)).getroot()
+            xml_path = os.path.join(self.data_dir, xml_file)
+            
+            if self.check_data:
+                image_file = xml_file.replace('xml', 'jpg')
+                image_path = os.path.join(self.data_dir, image_file)
+                try:
+                    img = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+                    if len(img.shape) != 3:
+                        print(f"Error: Image file {image_file} must be 3 channel in shape")
+                        continue
+                    try:
+                        with open(xml_path, 'rb') as f:
+                            xml.sax.parse(f, xml.sax.ContentHandler())
+                    except:
+                        print(f"Error: XML file {xml_file} is missing or not in correct format")
+                        continue
+                except Exception as e:
+                    print(f"Error: File {image_file} is can't loaded: {e}")
+                    continue
+                    
+            xml_root = ET.parse(xml_path).getroot()
             # Initialise the info dict
             info_dict = {}
             info_dict['bboxes'] = []
