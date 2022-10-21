@@ -7,12 +7,14 @@ from configs import base_config as cfg
 class ParseVOC:
     def __init__(self, 
                  data_dir          = cfg.DATA_PATH, 
+                 annotation_dir    = cfg.DATA_ANNOTATION_PATH
                  labels            = cfg.OBJECT_CLASSES,
                  load_memory       = cfg.DATA_LOAD_MEMORY, 
                  exclude_difficult = cfg.DATA_EXCLUDE_DIFFICULT, 
                  exclude_truncated = cfg.DATA_EXCLUDE_TRUNCATED,
                  check_data        = cfg.CHECK_DATA):
         self.data_dir          = data_dir
+        self.annotation_dir    = annotation_dir if annotation_dir else data_dir
         self.labels            = labels
         self.load_memory       = load_memory
         self.exclude_difficult = exclude_difficult
@@ -22,7 +24,7 @@ class ParseVOC:
     def __call__(self, xml_files):
         data_extraction = []
         for xml_file in xml_files:
-            xml_path = os.path.join(self.data_dir, xml_file)
+            xml_path = os.path.join(self.annotation_dir, xml_file)
             
             if self.check_data:
                 image_file = xml_file.replace('xml', 'jpg')
