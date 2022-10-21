@@ -36,30 +36,11 @@ def get_data(data_dir    = cfg.DATA_PATH,
              load_memory = cfg.DATA_LOAD_MEMORY,
              *args, **kwargs):
     data_dir = verify_folder(data_dir) + phase
-    image_files = sorted([x for x in os.listdir(data_dir) if x.split('.')[-1] == 'jpg' ])
     data_extraction = []
-
-    if check_data:
-        for image in image_files:
-            if data_type.lower() == "voc":
-                image_path = verify_folder(data_dir) + image
-                xml_path = image_path.replace('jpg', 'xml')
-                try:
-                    img = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-                    if len(img.shape) != 3:
-                        raise ValueError("Image file must be 3 channel in shape")
-                    try:
-                        with open(xml_path, 'rb') as f:
-                            xml.sax.parse(f, xml.sax.ContentHandler())
-                    except:
-                        raise ValueError("XML file is missing or not in correct format")
-                except Exception as e:
-                    print(f"Error: File {image} is can't loaded: {e}")
-                    image_files.remove(image)
     
     if data_type.lower() == "voc":
-        xml_files = [f.replace('jpg', 'xml') for f in image_files]
-        parser = ParseVOC(data_dir, classes, load_memory, *args, **kwargs)
+        xml_files = sorted([x for x in os.listdir(data_dir) if x.split('.')[-1] == 'xml' ])
+        parser = ParseVOC(data_dir, label, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser(xml_files)
         
     dict_data = {
