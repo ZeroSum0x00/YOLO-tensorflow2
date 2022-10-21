@@ -28,19 +28,20 @@ def extract_data_folder(data_dir, dst_dir=None):
         return data_dir
 
 
-def get_data(data_dir    = cfg.DATA_PATH, 
-             classes     = cfg.OBJECT_CLASSES, 
-             data_type   = cfg.DATA_TYPE,
-             phase       = 'train', 
-             check_data  = cfg.CHECK_DATA,
-             load_memory = cfg.DATA_LOAD_MEMORY,
+def get_data(data_dir       = cfg.DATA_PATH, 
+             annotation_dir = cfg.DATA_ANNOTATION_PATH,
+             classes        = cfg.OBJECT_CLASSES, 
+             data_type      = cfg.DATA_TYPE,
+             phase          = 'train', 
+             check_data     = cfg.CHECK_DATA,
+             load_memory    = cfg.DATA_LOAD_MEMORY,
              *args, **kwargs):
     data_dir = verify_folder(data_dir) + phase
     data_extraction = []
     
     if data_type.lower() == "voc" or data_type.lower() == 'pascal':
         xml_files = sorted([x for x in os.listdir(data_dir) if x.split('.')[-1] == 'xml'])
-        parser = ParseVOC(data_dir, label, load_memory, check_data=check_data, *args, **kwargs)
+        parser = ParseVOC(data_dir, annotation_dir, label, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser(xml_files)
         
     dict_data = {
