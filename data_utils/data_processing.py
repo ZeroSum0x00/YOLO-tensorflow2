@@ -38,8 +38,8 @@ def get_data(data_dir    = cfg.DATA_PATH,
     data_dir = verify_folder(data_dir) + phase
     data_extraction = []
     
-    if data_type.lower() == "voc":
-        xml_files = sorted([x for x in os.listdir(data_dir) if x.split('.')[-1] == 'xml' ])
+    if data_type.lower() == "voc" or data_type.lower() == 'pascal':
+        xml_files = sorted([x for x in os.listdir(data_dir) if x.split('.')[-1] == 'xml'])
         parser = ParseVOC(data_dir, label, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser(xml_files)
         
