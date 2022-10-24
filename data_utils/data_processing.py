@@ -41,10 +41,10 @@ def get_data(data_dir       = cfg.DATA_PATH,
     
     if data_type.lower() == "voc" or data_type.lower() == 'pascal':
         xml_files = sorted([x for x in os.listdir(data_dir) if x.split('.')[-1] == 'xml'])
-        parser = ParseVOC(data_dir, annotation_dir, label, load_memory, check_data=check_data, *args, **kwargs)
+        parser = ParseVOC(data_dir, annotation_dir, classes, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser(xml_files)
     elif data_type.lower() == "coco":
-        parser = ParseCOCO(data_dir, annotation_dir, label, load_memory, check_data=check_data, *args, **kwargs)
+        parser = ParseCOCO(data_dir, annotation_dir, classes, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser()
 
     dict_data = {
