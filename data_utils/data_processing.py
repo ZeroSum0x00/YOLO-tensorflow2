@@ -51,7 +51,7 @@ def get_data(data_dir       = cfg.DATA_PATH,
         'data_path': verify_folder(data_dir),
         'data_extractor': data_extraction
     }
-    return dict_data, data_extraction
+    return dict_data
 
 
 class Normalizer():
