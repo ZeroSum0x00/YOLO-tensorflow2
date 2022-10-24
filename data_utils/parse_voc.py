@@ -7,7 +7,7 @@ from configs import base_config as cfg
 class ParseVOC:
     def __init__(self, 
                  data_dir          = cfg.DATA_PATH, 
-                 annotation_dir    = cfg.DATA_ANNOTATION_PATH
+                 annotation_dir    = cfg.DATA_ANNOTATION_PATH,
                  labels            = cfg.OBJECT_CLASSES,
                  load_memory       = cfg.DATA_LOAD_MEMORY, 
                  exclude_difficult = cfg.DATA_EXCLUDE_DIFFICULT, 
