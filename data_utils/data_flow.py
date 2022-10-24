@@ -14,6 +14,7 @@ from configs import base_config as cfg
 
 
 def get_train_test_data(data_zipfile            = cfg.DATA_PATH, 
+                        annotation_dir          = cfg.DATA_ANNOTATION_PATH,
                         dst_dir                 = cfg.DATA_DESTINATION_PATH,
                         classes                 = cfg.OBJECT_CLASSES, 
                         target_size             = cfg.YOLO_TARGET_SIZE, 
@@ -38,6 +39,7 @@ def get_train_test_data(data_zipfile            = cfg.DATA_PATH,
                         
     data_folder = extract_data_folder(data_zipfile, dst_dir)
     data_train = get_data(data_folder,
+                          annotation_dir    = annotation_dir,
                           classes           = classes,
                           data_type         = data_type,
                           phase             = 'train', 
@@ -63,6 +65,7 @@ def get_train_test_data(data_zipfile            = cfg.DATA_PATH,
                                           *args, **kwargs)
 
     data_valid = get_data(data_folder,
+                          annotation_dir    = annotation_dir,
                           classes           = classes,
                           data_type         = data_type,
                           phase             = 'validation', 
