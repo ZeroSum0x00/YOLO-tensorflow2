@@ -43,12 +43,15 @@ def get_data(data_dir       = cfg.DATA_PATH,
         xml_files = sorted([x for x in os.listdir(data_dir) if x.split('.')[-1] == 'xml'])
         parser = ParseVOC(data_dir, annotation_dir, label, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser(xml_files)
-        
+    elif data_type.lower() == "coco":
+        parser = ParseCOCO(data_dir, annotation_dir, label, load_memory, check_data=check_data, *args, **kwargs)
+        data_extraction = parser()
+
     dict_data = {
         'data_path': verify_folder(data_dir),
         'data_extractor': data_extraction
     }
-    return dict_data
+    return dict_data, data_extraction
 
 
 class Normalizer():
