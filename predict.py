@@ -10,7 +10,7 @@ from models.yolov3 import YOLOv3Encoder, YOLOv3Decoder
 from models.architectures.darknet53 import DarkNet53
 from utils.post_processing import get_labels
 from visualizer.visual_image import visual_image, visual_image_with_bboxes
-from configs import base_config as cfg
+from configs import yolov3_config as cfg
 
 
 def resize_image(image, target_size, letterbox_image):
@@ -109,7 +109,7 @@ def detect_image(img_name, model, target_shape, class_names, crop=False, count=F
     return image
 
 
-classes, num_classes = get_labels(cfg.YOLO_CLASSES_FILE)
+classes, num_classes = cfg.YOLO_CLASSES, cfg.NUM_CLASSES
 
 backbone = DarkNet53(input_shape   = cfg.YOLO_TARGET_SIZE, 
                      activation    = cfg.YOLO_BACKBONE_ACTIVATION, 
@@ -136,7 +136,7 @@ load_type                          = "weights"
 
 weight_objects                    = [        
                                     {
-                                        'path': './saved_weights/20221024-235617/best_weights_mAP',
+                                        'path': './saved_weights/best_weights_mAP',
                                         'stage': 'full',
                                         'custom_objects': None
                                     }
