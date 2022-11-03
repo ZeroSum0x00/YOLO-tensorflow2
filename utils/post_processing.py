@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from configs import base_config as cfg
+from configs import general_config as cfg
 from utils.logger import logger
 
 
