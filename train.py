@@ -32,7 +32,7 @@ def train(data_path                   = cfg.DATA_PATH,
           load_memory                 = cfg.DATA_LOAD_MEMORY,
           exclude_difficult           = cfg.DATA_EXCLUDE_DIFFICULT,
           exclude_truncated           = cfg.DATA_EXCLUDE_TRUNCATED,
-          classes                     = cfg.OBJECT_CLASSES,
+          classes_file                = cfg.CLASSES_FILE,
           yolo_activation             = cfg.YOLO_ACTIVATION,
           yolo_normalization          = cfg.YOLO_NORMALIZATION,
           yolo_backbone_activation    = cfg.YOLO_BACKBONE_ACTIVATION,
@@ -71,7 +71,9 @@ def train(data_path                   = cfg.DATA_PATH,
           min_overlap                 = cfg.TEST_MIN_OVERLAP):
      
     TRAINING_TIME_PATH = create_folder_weights(saved_path)
-
+    
+    classes, num_classes = get_labels(classes_file)
+    
     train_generator, val_generator = get_train_test_data(data_zipfile            = data_path, 
                                                          dst_dir                 = data_dst_path,
                                                          classes                 = classes, 
@@ -93,8 +95,6 @@ def train(data_path                   = cfg.DATA_PATH,
                                                          load_memory             = load_memory,
                                                          exclude_difficult       = exclude_difficult,
                                                          exclude_truncated       = exclude_truncated)
-
-    num_classes = len(classes)
     
     backbone = DarkNet53(input_shape   = input_shape, 
                          activation    = yolo_backbone_activation, 
