@@ -1,7 +1,7 @@
 import os
 import cv2
 import xml.etree.ElementTree as ET
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 
 class ParseVOC:
