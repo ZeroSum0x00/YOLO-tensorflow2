@@ -5,7 +5,7 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.layers import MaxPool2D
 from tensorflow.keras.layers import UpSampling2D
 from models.yolov3 import ConvolutionBlock
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 
 class SPPLayer(tf.keras.layers.Layer):
