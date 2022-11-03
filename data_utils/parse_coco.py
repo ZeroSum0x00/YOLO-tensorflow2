@@ -1,7 +1,7 @@
 import os
 import cv2
 import json
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 
 class ParseCOCO:
