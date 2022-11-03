@@ -25,6 +25,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                  result_path    = None, 
                  max_bboxes     = cfg.YOLO_MAX_BBOXES, 
                  minoverlap     = cfg.TEST_MIN_OVERLAP,
+                 mode           = 'voc',
                  saved_best_map = True,
                  show_frequency = cfg.TRAIN_SHOW_FREQUENCY):
         super(mAPEvaluate, self).__init__()
@@ -35,6 +36,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
         self.data_path            = val_dataset.data_path
         self.max_bboxes           = max_bboxes
         self.minoverlap           = minoverlap
+        self.mode                 = mode
         self.saved_best_map       = saved_best_map
         self.show_frequency       = show_frequency
         self.map_out_path         = result_path + ".temp_map_out"
@@ -59,7 +61,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
         out_classes = out_classes[top_100]
         
         for i, c in enumerate(out_classes):
-            predicted_class             = get_label_name(self.classes, int(c))
+            predicted_class             = self.classes[int(c)]
             try:
                 score                   = str(out_scores[i].numpy())
             except:
@@ -91,14 +93,8 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 image = cv2.imread(img_path)
                 original_image_shape = image.shape
                 
-                #bboxes = ann_dataset['bboxes']
                 gt_boxes = ann_dataset['bboxes']
-                #bboxes = np.array(bboxes)
-                #image, bboxes = self.augmentor(image, bboxes)
-                #image, bboxes = self.normalizer(image, 
-                #                                bboxes=bboxes,
-                #                                target_size=self.input_shape,
-                #                                interpolation=cv2.INTER_NEAREST)
+
                 image  = resize_image(image, self.input_shape, letterbox_image=True)
                 image  = preprocess_input(image.astype(np.float32))
 
@@ -107,14 +103,14 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 with open(os.path.join(self.map_out_path, "ground-truth/" + img_name + ".txt"), "w") as new_f:
                     for box in gt_boxes:
                         x_min, y_min, x_max, y_max, obj = box
-                        obj_name = get_label_name(self.classes, obj)
+                        obj_name =  self.classes[int(obj)]
                         new_f.write("%s %s %s %s %s\n" % (obj_name, x_min, y_min, x_max, y_max))
                         
             print("Calculate Map.")
             
-            try:
+            if self.mode.lower() == 'coco':
                 map_result = get_coco_map(class_names=self.classes, path=self.map_out_path)[1]
-            except:
+            else:
                 map_result = get_map(self.minoverlap, False, path=self.map_out_path)
 
             if self.saved_best_map:
