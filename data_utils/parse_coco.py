@@ -8,19 +8,18 @@ class ParseCOCO:
     def __init__(self, 
                  data_dir          = cfg.DATA_PATH, 
                  annotation_dir    = cfg.DATA_ANNOTATION_PATH,
-                 labels            = cfg.OBJECT_CLASSES,
                  load_memory       = cfg.DATA_LOAD_MEMORY, 
                  exclude_crowd     = cfg.DATA_EXCLUDE_CROWD, 
+                 exclude_difficult = cfg.DATA_EXCLUDE_DIFFICULT, 
+                 exclude_truncated = cfg.DATA_EXCLUDE_TRUNCATED,
                  check_data        = cfg.CHECK_DATA):
         self.data_dir          = data_dir
         self.annotation_path   = annotation_dir
         json_file = open(annotation_dir)
         self.annotation_data = json.load(json_file)
         json_file.close()
-
         self.COCO_images, self.COCO_segments, self.COCO_categories  = self._get_COCO_data()
 
-        self.labels            = labels
         self.load_memory       = load_memory
         self.exclude_crowd = exclude_crowd
         self.check_data        = check_data
