@@ -6,7 +6,7 @@ from tqdm import tqdm
 import tensorflow as tf
 import scipy.signal
 from utils.logger import logger
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 import matplotlib
 matplotlib.use('Agg')
