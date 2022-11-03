@@ -27,7 +27,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                  minoverlap     = cfg.TEST_MIN_OVERLAP,
                  mode           = 'voc',
                  saved_best_map = True,
-                 show_frequency = cfg.TRAIN_SHOW_FREQUENCY):
+                 show_frequency = cfg.TRAIN_RESULT_SHOW_FREQUENCY):
         super(mAPEvaluate, self).__init__()
         self.val_dataset          = val_dataset
         self.input_shape          = input_shape
