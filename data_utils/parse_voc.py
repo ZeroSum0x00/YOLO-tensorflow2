@@ -8,7 +8,7 @@ class ParseVOC:
     def __init__(self, 
                  data_dir          = cfg.DATA_PATH, 
                  annotation_dir    = cfg.DATA_ANNOTATION_PATH,
-                 labels            = cfg.OBJECT_CLASSES,
+                 labels            = cfg.YOLO_CLASSES,
                  load_memory       = cfg.DATA_LOAD_MEMORY, 
                  exclude_difficult = cfg.DATA_EXCLUDE_DIFFICULT, 
                  exclude_truncated = cfg.DATA_EXCLUDE_TRUNCATED,
@@ -67,7 +67,7 @@ class ParseVOC:
                     bbox = [0, 0, 0, 0, 0]
                     for subelem in elem:
                         if subelem.tag == "name":
-                            bbox[4] = self.labels[subelem.text] if sorted(self.labels.values())[0] == 0 else self.labels[subelem.text] - sorted(self.labels.values())[0]
+                            bbox[4] = self.labels.index(subelem.text)
                         elif subelem.tag == "truncated" and self.exclude_truncated:
                             if int(subelem.text) == 1:
                                 bbox = [0, 0, 0, 0, 0]
