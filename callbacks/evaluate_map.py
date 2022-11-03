@@ -21,7 +21,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
     def __init__(self, 
                  val_dataset, 
                  input_shape    = cfg.YOLO_TARGET_SIZE, 
-                 classes        = cfg.OBJECT_CLASSES, 
+                 classes        = cfg.YOLO_CLASSES, 
                  result_path    = None, 
                  max_bboxes     = cfg.YOLO_MAX_BBOXES, 
                  minoverlap     = cfg.TEST_MIN_OVERLAP,
