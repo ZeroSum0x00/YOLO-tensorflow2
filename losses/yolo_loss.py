@@ -13,7 +13,7 @@ class YOLOLoss(tf.keras.losses.Loss):
                  input_shape       = cfg.YOLO_TARGET_SIZE,
                  anchors           = cfg.YOLO_ANCHORS,
                  anchors_mask      = cfg.YOLO_ANCHORS_MASK,
-                 num_classes       = len(cfg.OBJECT_CLASSES),
+                 num_classes       = cfg.NUM_CLASSES,
                  ignore_threshold  = cfg.YOLO_IGNORE_THRESHOLD,
                  balance           = cfg.YOLO_BALANCE_LOSS,
                  box_ratio         = cfg.YOLO_BOX_RATIO_LOSS,
