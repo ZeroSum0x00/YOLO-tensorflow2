@@ -8,6 +8,8 @@ CLASSES_FILE                    = './configs/voc_classes.names'
 YOLO_CLASSES, NUM_CLASSES       = get_labels(CLASSES_FILE)
 
 # YOLO hyper-parameters
+YOLO_ARCHITECTURE               = 'yolov3'
+
 YOLO_ACTIVATION                 = 'leaky'
 
 YOLO_NORMALIZATION              = 'batchnorm'
@@ -60,7 +62,6 @@ YOLO_FOCAL_GAMMA_RATIO          = 2
 
 
 # Training hyper-parameters
-#DATA_PATH                       = "/home/vbpo/Desktop/TuNIT/working/Yolo/yolo-repo/datasets"
 DATA_PATH                       = "/home/vbpo/Desktop/TuNIT/working/Yolo/yolo-project/datasets/VOC2017"
 
 DATA_ANNOTATION_PATH            = None
