@@ -1,5 +1,5 @@
 from augmenter.augmentation import *
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 
 class Augmentor:
