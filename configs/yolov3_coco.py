@@ -3,7 +3,7 @@ from augmenter.augmentation import basic_augmenter, endemic_augmenter
 from utils.post_processing import get_labels
 
 
-CLASSES_FILE                    = './configs/voc_classes.names'
+CLASSES_FILE                    = './configs/coco_classes.names'
 
 YOLO_CLASSES, NUM_CLASSES       = get_labels(CLASSES_FILE)
 
