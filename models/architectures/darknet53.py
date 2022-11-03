@@ -10,7 +10,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.regularizers import l2
 
 from models.layers import get_activation_from_name, get_normalization_from_name
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 
 def convolutional_block(x, filters, kernel_size, downsample=False, activation='leaky', norm_layer='batchnorm'):
