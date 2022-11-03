@@ -15,7 +15,7 @@ from tensorflow.keras.regularizers import l2
 from models.layers.normalization import FrozenBatchNormalization
 from models.layers.activations import Mish
 from utils.bboxes import yolo_correct_boxes, get_anchors_and_decode
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 
 class ConvolutionBlock(tf.keras.layers.Layer):
