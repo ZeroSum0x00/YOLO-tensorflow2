@@ -32,7 +32,7 @@ def train(data_path                   = cfg.DATA_PATH,
           load_memory                 = cfg.DATA_LOAD_MEMORY,
           exclude_difficult           = cfg.DATA_EXCLUDE_DIFFICULT,
           exclude_truncated           = cfg.DATA_EXCLUDE_TRUNCATED,
-          classes_file                = cfg.CLASSES_FILE,
+          classes                     = cfg.YOLO_CLASSES,
           yolo_activation             = cfg.YOLO_ACTIVATION,
           yolo_normalization          = cfg.YOLO_NORMALIZATION,
           yolo_backbone_activation    = cfg.YOLO_BACKBONE_ACTIVATION,
@@ -72,7 +72,7 @@ def train(data_path                   = cfg.DATA_PATH,
      
     TRAINING_TIME_PATH = create_folder_weights(saved_path)
     
-    classes, num_classes = get_labels(classes_file)
+    num_classes = len(classes)
     
     train_generator, val_generator = get_train_test_data(data_zipfile            = data_path, 
                                                          dst_dir                 = data_dst_path,
@@ -184,7 +184,7 @@ def train(data_path                   = cfg.DATA_PATH,
               initial_epoch       = init_epoch,
               callbacks           = callbacks)
     model.save_weights(TRAINING_TIME_PATH + 'best_weights', save_format="tf")
-
+          
 
 if __name__ == '__main__':
     train()
