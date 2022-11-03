@@ -15,7 +15,7 @@ from callbacks.loss_history import LossHistory
 from callbacks.evaluate_map import mAPEvaluate
 from utils.logger import logger
 from utils.train_processing import create_folder_weights
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 
 
