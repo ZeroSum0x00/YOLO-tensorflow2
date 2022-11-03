@@ -6,11 +6,9 @@ from tqdm import tqdm
 import tensorflow as tf
 
 from utils.calc_map import get_coco_map, get_map
-#from data_utils.data_processing import Normalizer
-#from data_utils.data_augmentation import Augmentor
 from utils.post_processing import resize_image, preprocess_input
 from utils.logger import logger
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 import matplotlib
 matplotlib.use('Agg')
