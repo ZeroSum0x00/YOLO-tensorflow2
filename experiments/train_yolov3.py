@@ -1,3 +1,6 @@
+import sys, os
+sys.path.append(os.path.abspath(os.path.join('../')))
+
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.models import load_model
