@@ -4,12 +4,11 @@ from configs import base_config as cfg
 from utils.logger import logger
 
 
-def get_label_name(classes, index):
-    min_idx = sorted(classes.values())[0]
-    for key, value in classes.items():
-        if value - min_idx == index:
-            return key
-    print("key doesn't exist")
+def get_labels(label_file):
+    with open(label_file, encoding='utf-8') as f:
+        class_names = f.readlines()
+    class_names = [c.strip() for c in class_names]
+    return class_names, len(class_names)
 
 
 def resize_image(image, target_size, letterbox_image):
