@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 import matplotlib
 matplotlib.use('Agg')
