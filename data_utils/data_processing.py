@@ -30,7 +30,7 @@ def extract_data_folder(data_dir, dst_dir=None):
 
 def get_data(data_dir       = cfg.DATA_PATH, 
              annotation_dir = cfg.DATA_ANNOTATION_PATH,
-             classes        = cfg.OBJECT_CLASSES, 
+             classes        = cfg.YOLO_CLASSES, 
              data_type      = cfg.DATA_TYPE,
              phase          = 'train', 
              check_data     = cfg.CHECK_DATA,
