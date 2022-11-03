@@ -10,7 +10,7 @@ from data_utils.data_processing import extract_data_folder, get_data, Normalizer
 from data_utils.data_augmentation import Augmentor, EndemicAugmentor
 from utils.auxiliary_processing import random_range
 from utils.logger import logger
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 
 def get_train_test_data(data_zipfile            = cfg.DATA_PATH, 
