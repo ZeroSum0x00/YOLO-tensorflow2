@@ -5,7 +5,7 @@ from tensorflow.keras import backend as K
 
 from utils.bboxes import get_anchors_and_decode
 from utils.iou import box_iou, iou_loss
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 
 class YOLOLoss(tf.keras.losses.Loss):
