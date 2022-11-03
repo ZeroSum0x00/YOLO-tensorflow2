@@ -1,14 +1,13 @@
 # import config parameters
 from augmenter.augmentation import basic_augmenter, endemic_augmenter
+from utils.post_processing import get_labels
 
+
+CLASSES_FILE                    = './configs/voc_classes.names'
+
+YOLO_CLASSES, NUM_CLASSES       = get_labels(CLASSES_FILE)
 
 # YOLO hyper-parameters
-OBJECT_CLASSES                  = {"aeroplane": 1, "bicycle": 2, "bird": 3, "boat": 4,
-                                   "bottle": 5, "bus": 6, "car": 7, "cat": 8, "chair": 9,
-                                   "cow": 10, "diningtable": 11, "dog": 12, "horse": 13,
-                                   "motorbike": 14, "person": 15, "pottedplant": 16,
-                                   "sheep": 17, "sofa": 18, "train": 19, "tvmonitor": 20}
-
 YOLO_ACTIVATION                 = 'leaky'
 
 YOLO_NORMALIZATION              = 'batchnorm'
@@ -45,7 +44,7 @@ YOLO_BOX_RATIO_LOSS             = 0.05
 
 YOLO_OBJ_RATIO_LOSS             = 5 * (YOLO_TARGET_SIZE[0] * YOLO_TARGET_SIZE[1]) / (416 ** 2)
 
-YOLO_CLS_RATIO_LOSS             = 1 * (len(OBJECT_CLASSES) / 80)
+YOLO_CLS_RATIO_LOSS             = 1 * (NUM_CLASSES / 80)
 
 YOLO_LABEL_SMOOTHING            = 0.1
 
