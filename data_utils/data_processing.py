@@ -5,7 +5,7 @@ import numpy as np
 
 from utils.files import extract_zip, verify_folder
 from data_utils.parse_voc import ParseVOC
-from configs import base_config as cfg
+from configs import general_config as cfg
 
 
 def extract_data_folder(data_dir, dst_dir=None):
