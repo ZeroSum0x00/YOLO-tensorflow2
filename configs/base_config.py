@@ -119,7 +119,7 @@ TRAIN_WEIGHT_OBJECTS            = [
                                     }
                                   ]
 
-TRAIN_SHOW_FREQUENCY            = 10
+TRAIN_RESULT_SHOW_FREQUENCY     = 10
 
 TRAIN_SAVE_WEIGHT_FREQUENCY     = 50
 
