@@ -1,14 +1,14 @@
 # import config parameters
 from augmenter.augmentation import basic_augmenter, endemic_augmenter
+from utils.post_processing import get_labels
+
+
+CLASSES_FILE                    = './configs/voc_classes.names'
+
+YOLO_CLASSES, NUM_CLASSES       = get_labels(CLASSES_FILE)
 
 
 # YOLO hyper-parameters
-OBJECT_CLASSES                  = {"aeroplane": 1, "bicycle": 2, "bird": 3, "boat": 4,
-                                  "bottle": 5, "bus": 6, "car": 7, "cat": 8, "chair": 9,
-                                   "cow": 10, "diningtable": 11, "dog": 12, "horse": 13,
-                                   "motorbike": 14, "person": 15, "pottedplant": 16,
-                                   "sheep": 17, "sofa": 18, "train": 19, "tvmonitor": 20}
-
 YOLO_ACTIVATION                 = 'leaky'
 
 YOLO_NORMALIZATION              = 'batchnorm'
@@ -45,26 +45,25 @@ YOLO_BOX_RATIO_LOSS             = 0.05
 
 YOLO_OBJ_RATIO_LOSS             = 5 * (YOLO_TARGET_SIZE[0] * YOLO_TARGET_SIZE[1]) / (416 ** 2)
 
-YOLO_CLS_RATIO_LOSS             = 1 * (len(OBJECT_CLASSES) / 80)
+YOLO_CLS_RATIO_LOSS             = 1 * (NUM_CLASSES / 80)
 
-YOLO_LABEL_SMOOTHING            = None
+YOLO_LABEL_SMOOTHING            = 0.1
 
-YOLO_IOU_METHOD                 = None
+YOLO_IOU_METHOD                 = 'CIOU'
 
-YOLO_FOCAL_LOSS                 = None
+YOLO_FOCAL_LOSS                 = False
 
-YOLO_FOCAL_LOSS_RATIO           = 0
+YOLO_FOCAL_LOSS_RATIO           = 10
 
-YOLO_FOCAL_ALPHA_RATIO          = 0
+YOLO_FOCAL_ALPHA_RATIO          = 0.25
 
-YOLO_FOCAL_GAMMA_RATIO          = 0
+YOLO_FOCAL_GAMMA_RATIO          = 2
 
 
 # Training hyper-parameters
-#DATA_PATH                   = "/home/vbpo/Desktop/TuNIT/working/Yolo/yolo-repo/datasets"
-DATA_PATH                       = "/home/vbpo/Desktop/TuNIT/working/Yolo/yolo-project/datasets/VOC2017"
+DATA_PATH                       = "/home/vbpo/Desktop/TuNIT/working/Instance Segmentation/datasets/COCO"
 
-DATA_ANNOTATION_PATH            = None
+DATA_ANNOTATION_PATH            = "/home/vbpo/Desktop/TuNIT/working/Instance Segmentation/datasets/COCO/annotations/"
 
 DATA_DESTINATION_PATH           = None
 
@@ -78,11 +77,13 @@ DATA_ENDEMIC_AUGMENTATION_RATIO = 0.7
 
 DATA_NORMALIZER                 = 'divide'
 
-DATA_TYPE                       = 'voc'
+DATA_TYPE                       = 'coco'
 
 CHECK_DATA                      = False
 
 DATA_LOAD_MEMORY                = False
+
+DATA_EXCLUDE_CROWD              = True
 
 DATA_EXCLUDE_DIFFICULT          = True
 
@@ -120,7 +121,7 @@ TRAIN_WEIGHT_OBJECTS            = [
                                     }
                                   ]
 
-TRAIN_SHOW_FREQUENCY            = 10
+TRAIN_RESULT_SHOW_FREQUENCY     = 10
 
 TRAIN_SAVE_WEIGHT_FREQUENCY     = 50
 
