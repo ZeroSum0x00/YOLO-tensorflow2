@@ -45,7 +45,7 @@ def get_data(data_dir       = cfg.DATA_PATH,
         data_extraction = parser(xml_files)
     elif data_type.lower() == "coco":
         annotation_file = verify_folder(annotation_dir) + f'instances_{phase}.json'
-        parser = ParseCOCO(data_dir, annotation_file, classes, load_memory, check_data=check_data, *args, **kwargs)
+        parser = ParseCOCO(data_dir, annotation_file, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser()
 
     dict_data = {
