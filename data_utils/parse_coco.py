@@ -1,6 +1,7 @@
 import os
 import cv2
 import json
+from tqdm import tqdm
 from configs import general_config as cfg
 
 
@@ -45,11 +46,17 @@ class ParseCOCO:
             if cat['name'] == '_background_':
                 continue
             COCO_categories[cat['id']] = index + 1
+
+        COCO_image_keys = COCO_images.keys()
+        COCO_segment_keys = COCO_segments.keys()
+        for img_key in list(COCO_image_keys):
+            if img_key not in COCO_segment_keys:
+                del COCO_images[img_key]
         return COCO_images, COCO_segments, COCO_categories
 
     def __call__(self):
         data_extraction = []
-        for image_id in self.COCO_images.keys():
+        for image_id in tqdm(self.COCO_images.keys(), desc="Load dataset"):
             info_dict = {}
             info_dict['bboxes'] = []
             info_dict['image'] = []
