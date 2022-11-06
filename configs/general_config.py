@@ -84,6 +84,8 @@ CHECK_DATA                      = False
 
 DATA_LOAD_MEMORY                = False
 
+DATA_EXCLUDE_CROWD              = True
+
 DATA_EXCLUDE_DIFFICULT          = True
 
 DATA_EXCLUDE_TRUNCATED          = False
