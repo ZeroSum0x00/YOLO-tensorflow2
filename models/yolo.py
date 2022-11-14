@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
@@ -72,8 +73,15 @@ class YOLO(tf.keras.Model):
         out_boxes, out_scores, out_classes = self.decoder(inputs)
         return out_boxes, out_scores, out_classes
 
-    def save_weights(self, weight_path, save_format='tf', **kwargs):
-        self.encoder.save_weights(weight_path, save_format=save_format, **kwargs)
+    def save_weights(self, weight_path, save_head=True, save_format='tf', **kwargs):
+        if save_head:
+            self.encoder.save_weights(weight_path, save_format=save_format, **kwargs)
+        else:
+            backup_model = copy.deepcopy(self.encoder)
+            backup_model.get_layer("medium_bbox_predictor").pop()
+            backup_model.get_layer("large_bbox_predictor").pop()
+            backup_model.get_layer("small_bbox_predictor").pop()
+            backup_model.save_weights(weight_path, save_format=save_format, **kwargs)
 
     def load_weights(self, weight_objects):
         for weight in weight_objects:
