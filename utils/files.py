@@ -18,3 +18,9 @@ def verify_folder(folder):
     if folder[-1] != '/':
         folder += '/'
     return folder
+
+
+def get_files(folder_path, extensions=['py', 'png', 'JPEG']):
+    extensions = [ex.lower() for ex in extensions]
+    result = [x for x in os.listdir(folder_path) if x.split('.')[-1] in extensions]
+    return result
