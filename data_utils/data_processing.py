@@ -3,7 +3,7 @@ import cv2
 import xml
 import numpy as np
 
-from utils.files import extract_zip, verify_folder
+from utils.files import extract_zip, verify_folder, get_files
 from data_utils.parse_voc import ParseVOC
 from configs import general_config as cfg
 
@@ -40,7 +40,7 @@ def get_data(data_dir       = cfg.DATA_PATH,
     data_extraction = []
     
     if data_type.lower() == "voc" or data_type.lower() == 'pascal':
-        xml_files = sorted([x for x in os.listdir(data_dir) if x.split('.')[-1] == 'xml'])
+        xml_files = sorted(get_files(data_dir, extensions='xml'))
         parser = ParseVOC(data_dir, annotation_dir, classes, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser(xml_files)
     elif data_type.lower() == "coco":
