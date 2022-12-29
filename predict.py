@@ -108,51 +108,51 @@ def detect_image(img_name, model, target_shape, class_names, crop=False, count=F
     cv2.imwrite('./saved_weights/result.jpg', image)
     return image
 
+if __name__ == "__main__":
+    classes, num_classes = cfg.YOLO_CLASSES, cfg.NUM_CLASSES
 
-classes, num_classes = cfg.YOLO_CLASSES, cfg.NUM_CLASSES
+    backbone = DarkNet53(input_shape   = cfg.YOLO_TARGET_SIZE, 
+                         activation    = cfg.YOLO_BACKBONE_ACTIVATION, 
+                         norm_layer    = cfg.YOLO_BACKBONE_NORMALIZATION)
 
-backbone = DarkNet53(input_shape   = cfg.YOLO_TARGET_SIZE, 
-                     activation    = cfg.YOLO_BACKBONE_ACTIVATION, 
-                     norm_layer    = cfg.YOLO_BACKBONE_NORMALIZATION)
+    encoder = YOLOv3Encoder(backbone    = backbone,
+                            num_classes = num_classes, 
+                            num_anchor  = 3,
+                            activation  = cfg.YOLO_ACTIVATION,
+                            norm_layer  = cfg.YOLO_NORMALIZATION)
 
-encoder = YOLOv3Encoder(backbone    = backbone,
-                        num_classes = num_classes, 
-                        num_anchor  = 3,
-                        activation  = cfg.YOLO_ACTIVATION,
-                        norm_layer  = cfg.YOLO_NORMALIZATION)
+    decoder = YOLOv3Decoder(anchors     = cfg.YOLO_ANCHORS,
+                            num_classes = num_classes,
+                            input_size  = cfg.YOLO_TARGET_SIZE,
+                            anchor_mask = cfg.YOLO_ANCHORS_MASK,
+                            max_boxes   = cfg.YOLO_MAX_BBOXES,
+                            confidence  = 0.5,
+                            nms_iou     = cfg.TEST_IOU_THRESHOLD,
+                            letterbox_image=True)
 
-decoder = YOLOv3Decoder(anchors     = cfg.YOLO_ANCHORS,
-                        num_classes = num_classes,
-                        input_size  = cfg.YOLO_TARGET_SIZE,
-                        anchor_mask = cfg.YOLO_ANCHORS_MASK,
-                        max_boxes   = cfg.YOLO_MAX_BBOXES,
-                        confidence  = 0.5,
-                        nms_iou     = cfg.TEST_IOU_THRESHOLD,
-                        letterbox_image=True)
+    model = YOLO(encoder, decoder)
 
-model = YOLO(encoder, decoder)
+    load_type                          = "weights"
 
-load_type                          = "weights"
+    weight_objects                    = [        
+                                        {
+                                            'path': './saved_weights/best_weights_mAP',
+                                            'stage': 'full',
+                                            'custom_objects': None
+                                        }
+                                    ]
 
-weight_objects                    = [        
-                                    {
-                                        'path': './saved_weights/best_weights_mAP',
-                                        'stage': 'full',
-                                        'custom_objects': None
-                                    }
-                                ]
+    if load_type and weight_objects:
+        if load_type == "weights":
+            model.load_weights(weight_objects)
+        elif load_type == "models":
+            model.load_models(weight_objects)
 
-if load_type and weight_objects:
-    if load_type == "weights":
-        model.load_weights(weight_objects)
-    elif load_type == "models":
-        model.load_models(weight_objects)
-        
-image = "/home/vbpo/Desktop/TuNIT/working/Yolo/Yolo - pythonlessons/IMAGES/city.jpg"
-img = detect_image(image, 
-                   model, 
-                   cfg.YOLO_TARGET_SIZE, 
-                   classes, 
-                   crop=False, 
-                   count=False, 
-                   letterbox_image=True)
+    image = "/home/vbpo/Desktop/TuNIT/working/Yolo/Yolo - pythonlessons/IMAGES/city.jpg"
+    img = detect_image(image, 
+                       model, 
+                       cfg.YOLO_TARGET_SIZE, 
+                       classes, 
+                       crop=False, 
+                       count=False, 
+                       letterbox_image=True)
