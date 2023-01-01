@@ -14,7 +14,7 @@ from callbacks.warmup_lr import AdvanceWarmUpLearningRate
 from callbacks.loss_history import LossHistory
 from callbacks.evaluate_map import mAPEvaluate
 from utils.logger import logger
-from utils.train_processing import create_folder_weights
+from utils.train_processing import create_folder_weights, train_prepare
 from configs import general_config as cfg
 
 
@@ -66,124 +66,126 @@ def train(data_path                   = cfg.DATA_PATH,
           show_frequency              = cfg.TRAIN_RESULT_SHOW_FREQUENCY,
           saved_weight_frequency      = cfg.TRAIN_SAVE_WEIGHT_FREQUENCY,
           saved_path                  = cfg.TRAIN_SAVED_PATH,
+          training_mode               = cfg.TRAIN_MODE,
           confidence_threshold        = cfg.TEST_CONFIDENCE_THRESHOLD,
           iou_threshold               = cfg.TEST_IOU_THRESHOLD,
           min_overlap                 = cfg.TEST_MIN_OVERLAP):
-     
-    TRAINING_TIME_PATH = create_folder_weights(saved_path)
-    
-    num_classes = len(classes)
-    
-    train_generator, val_generator = get_train_test_data(data_zipfile            = data_path, 
-                                                         dst_dir                 = data_dst_path,
-                                                         classes                 = classes, 
-                                                         target_size             = input_shape, 
-                                                         batch_size              = batch_size, 
-                                                         yolo_strides            = yolo_strides,
-                                                         yolo_anchors            = yolo_anchors,
-                                                         yolo_anchors_mask       = yolo_anchors_mask,
-                                                         max_bboxes              = max_bboxes,
-                                                         init_epoch              = init_epoch,
-                                                         end_epoch               = end_epoch,
-                                                         augmentor               = data_augmentation,
-                                                         endemic_augmentor       = data_endemic_augmentor,
-                                                         endemic_augmentor_proba = endemic_augmentor_proba,
-                                                         endemic_augmentor_ratio = endemic_augmentor_ratio,
-                                                         normalizer              = data_normalizer,
-                                                         data_type               = data_type,
-                                                         check_data              = check_data, 
-                                                         load_memory             = load_memory,
-                                                         exclude_difficult       = exclude_difficult,
-                                                         exclude_truncated       = exclude_truncated)
-    
-    backbone = DarkNet53(input_shape   = input_shape, 
-                         activation    = yolo_backbone_activation, 
-                         norm_layer    = yolo_backbone_normalization, 
-                         model_weights = yolo_backbone_weight)
-    
-    encoder = YOLOv3Encoder(backbone    = backbone,
-                            num_classes = num_classes, 
-                            num_anchor  = 3,
-                            activation  = yolo_activation,
-                            norm_layer  = yolo_normalization)
-    
-    decoder = YOLOv3Decoder(anchors     = yolo_anchors,
-                            num_classes = num_classes,
-                            input_size  = input_shape,
-                            anchor_mask = yolo_anchors_mask,
-                            max_boxes   = max_bboxes,
-                            confidence  = confidence_threshold,
-                            nms_iou     = iou_threshold,
-                            letterbox_image=True)
+          
+    if train_prepare(training_mode):
+        TRAINING_TIME_PATH = create_folder_weights(saved_path)
 
-    model = YOLO(encoder, decoder)
+        num_classes = len(classes)
 
-    if weight_type and weight_objects:
-        if weight_type == "weights":
-            model.load_weights(weight_objects)
-        elif weight_type == "models":
-            model.load_models(weight_objects)
+        train_generator, val_generator = get_train_test_data(data_zipfile            = data_path, 
+                                                             dst_dir                 = data_dst_path,
+                                                             classes                 = classes, 
+                                                             target_size             = input_shape, 
+                                                             batch_size              = batch_size, 
+                                                             yolo_strides            = yolo_strides,
+                                                             yolo_anchors            = yolo_anchors,
+                                                             yolo_anchors_mask       = yolo_anchors_mask,
+                                                             max_bboxes              = max_bboxes,
+                                                             init_epoch              = init_epoch,
+                                                             end_epoch               = end_epoch,
+                                                             augmentor               = data_augmentation,
+                                                             endemic_augmentor       = data_endemic_augmentor,
+                                                             endemic_augmentor_proba = endemic_augmentor_proba,
+                                                             endemic_augmentor_ratio = endemic_augmentor_ratio,
+                                                             normalizer              = data_normalizer,
+                                                             data_type               = data_type,
+                                                             check_data              = check_data, 
+                                                             load_memory             = load_memory,
+                                                             exclude_difficult       = exclude_difficult,
+                                                             exclude_truncated       = exclude_truncated)
+
+        backbone = DarkNet53(input_shape   = input_shape, 
+                             activation    = yolo_backbone_activation, 
+                             norm_layer    = yolo_backbone_normalization, 
+                             model_weights = yolo_backbone_weight)
+
+        encoder = YOLOv3Encoder(backbone    = backbone,
+                                num_classes = num_classes, 
+                                num_anchor  = 3,
+                                activation  = yolo_activation,
+                                norm_layer  = yolo_normalization)
+
+        decoder = YOLOv3Decoder(anchors     = yolo_anchors,
+                                num_classes = num_classes,
+                                input_size  = input_shape,
+                                anchor_mask = yolo_anchors_mask,
+                                max_boxes   = max_bboxes,
+                                confidence  = confidence_threshold,
+                                nms_iou     = iou_threshold,
+                                letterbox_image=True)
+
+        model = YOLO(encoder, decoder)
+
+        if weight_type and weight_objects:
+            if weight_type == "weights":
+                model.load_weights(weight_objects)
+            elif weight_type == "models":
+                model.load_models(weight_objects)
 
 
-    loss = YOLOLoss(input_shape       = input_shape, 
-                    anchors           = yolo_anchors, 
-                    anchors_mask      = yolo_anchors_mask, 
-                    num_classes       = num_classes, 
-                    ignore_threshold  = ignore_threshold,
-                    balance           = balance_loss,
-                    box_ratio         = box_ratio_loss, 
-                    obj_ratio         = obj_ratio_loss,
-                    cls_ratio         = cls_ratio_loss,
-                    label_smoothing   = label_smoothing,
-                    iou_method        = iou_method,
-                    focal_loss        = focal_loss,
-                    focal_loss_ratio  = focal_loss_ratio,
-                    focal_alpha_ratio = focal_alpha_ratio,
-                    focal_gamma_ratio = focal_gamma_ratio)
-    
-    nbs             = 64
-    lr_limit_max    = 5e-2 
-    lr_limit_min    = 5e-4
-    Init_lr_fit     = min(max(batch_size / nbs * lr_init, lr_limit_min), lr_limit_max)
-    Min_lr_fit      = min(max(batch_size / nbs * lr_end, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
+        loss = YOLOLoss(input_shape       = input_shape, 
+                        anchors           = yolo_anchors, 
+                        anchors_mask      = yolo_anchors_mask, 
+                        num_classes       = num_classes, 
+                        ignore_threshold  = ignore_threshold,
+                        balance           = balance_loss,
+                        box_ratio         = box_ratio_loss, 
+                        obj_ratio         = obj_ratio_loss,
+                        cls_ratio         = cls_ratio_loss,
+                        label_smoothing   = label_smoothing,
+                        iou_method        = iou_method,
+                        focal_loss        = focal_loss,
+                        focal_loss_ratio  = focal_loss_ratio,
+                        focal_alpha_ratio = focal_alpha_ratio,
+                        focal_gamma_ratio = focal_gamma_ratio)
 
-    eval_callback = mAPEvaluate(val_generator, 
-                                input_shape    = input_shape, 
-                                classes        = classes, 
-                                result_path    = TRAINING_TIME_PATH, 
-                                max_bboxes     = max_bboxes, 
-                                minoverlap     = min_overlap,
-                                saved_best_map = True,
-                                show_frequency = show_frequency)
-    
-    history = LossHistory(result_path=TRAINING_TIME_PATH)
-    
-    checkpoint = ModelCheckpoint(TRAINING_TIME_PATH + 'checkpoint_{epoch:04d}/saved_yolo_weights', 
-                                 monitor='val_total_loss',
-                                 verbose=1, 
-                                 save_weights_only=True,
-                                 save_freq="epoch",
-                                 period=saved_weight_frequency)
-    
-    logger = CSVLogger(TRAINING_TIME_PATH + 'train_history.csv', separator=",", append=True)
+        nbs             = 64
+        lr_limit_max    = 5e-2 
+        lr_limit_min    = 5e-4
+        Init_lr_fit     = min(max(batch_size / nbs * lr_init, lr_limit_min), lr_limit_max)
+        Min_lr_fit      = min(max(batch_size / nbs * lr_end, lr_limit_min * 1e-2), lr_limit_max * 1e-2)
 
-    warmup_lr = AdvanceWarmUpLearningRate(lr_init=Init_lr_fit, lr_end=Min_lr_fit, epochs=end_epoch, result_path=TRAINING_TIME_PATH)
-    
-    callbacks = [eval_callback, history, checkpoint, logger, warmup_lr]
-    
+        eval_callback = mAPEvaluate(val_generator, 
+                                    input_shape    = input_shape, 
+                                    classes        = classes, 
+                                    result_path    = TRAINING_TIME_PATH, 
+                                    max_bboxes     = max_bboxes, 
+                                    minoverlap     = min_overlap,
+                                    saved_best_map = True,
+                                    show_frequency = show_frequency)
 
-    optimizer = SGD(learning_rate=Init_lr_fit, momentum=momentum, nesterov=nesterov)
+        history = LossHistory(result_path=TRAINING_TIME_PATH)
 
-    model.compile(optimizer=optimizer, loss=loss)
+        checkpoint = ModelCheckpoint(TRAINING_TIME_PATH + 'checkpoint_{epoch:04d}/saved_yolo_weights', 
+                                     monitor='val_total_loss',
+                                     verbose=1, 
+                                     save_weights_only=True,
+                                     save_freq="epoch",
+                                     period=saved_weight_frequency)
 
-    model.fit(train_generator,
-              steps_per_epoch     = train_generator.n // batch_size,
-              validation_data     = val_generator,
-              validation_steps    = val_generator.n // batch_size,
-              epochs              = end_epoch,
-              initial_epoch       = init_epoch,
-              callbacks           = callbacks)
-    model.save_weights(TRAINING_TIME_PATH + 'best_weights', save_format="tf")
+        logger = CSVLogger(TRAINING_TIME_PATH + 'train_history.csv', separator=",", append=True)
+
+        warmup_lr = AdvanceWarmUpLearningRate(lr_init=Init_lr_fit, lr_end=Min_lr_fit, epochs=end_epoch, result_path=TRAINING_TIME_PATH)
+
+        callbacks = [eval_callback, history, checkpoint, logger, warmup_lr]
+
+
+        optimizer = SGD(learning_rate=Init_lr_fit, momentum=momentum, nesterov=nesterov)
+
+        model.compile(optimizer=optimizer, loss=loss)
+
+        model.fit(train_generator,
+                  steps_per_epoch     = train_generator.n // batch_size,
+                  validation_data     = val_generator,
+                  validation_steps    = val_generator.n // batch_size,
+                  epochs              = end_epoch,
+                  initial_epoch       = init_epoch,
+                  callbacks           = callbacks)
+        model.save_weights(TRAINING_TIME_PATH + 'best_weights', save_format="tf")
           
 
 if __name__ == '__main__':
