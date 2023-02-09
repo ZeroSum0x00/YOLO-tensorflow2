@@ -25,5 +25,5 @@ def get_files(folder_path, extensions=['py', 'png', 'JPEG']):
         extensions = [extensions]
     else:
         extensions = [ex.lower() for ex in extensions]
-    result = [x for x in os.listdir(folder_path) if x.split('.')[-1] in extensions]
+    result = [x for x in os.listdir(folder_path) if x.split('.')[-1].lower() in extensions]
     return result
