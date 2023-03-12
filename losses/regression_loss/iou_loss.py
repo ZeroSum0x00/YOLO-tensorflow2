@@ -11,6 +11,7 @@ class IOUloss(tf.keras.losses.Loss):
         super(IOUloss, self).__init__(name=name)
         self.iou_method  = iou_method
         self.reduction   = reduction
+        self.invariant_name = "IOUloss"
         self.coefficient = 1
 
     def __call__(self, box1, box2):
