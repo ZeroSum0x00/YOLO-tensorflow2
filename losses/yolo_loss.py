@@ -38,7 +38,6 @@ class YOLOLoss(tf.keras.losses.Loss):
         self.obj_ratio         = obj_ratio
         self.cls_ratio         = cls_ratio
         self.label_smoothing   = label_smoothing
-        self.iou_method        = iou_method
         self.focal_loss        = focal_loss
         self.focal_loss_ratio  = focal_loss_ratio
         self.focal_alpha_ratio = focal_alpha_ratio
@@ -54,8 +53,6 @@ class YOLOLoss(tf.keras.losses.Loss):
         num_layers      = len(self.anchors_mask)
 
         input_shape = K.cast(self.input_shape[:-1], K.dtype(y_true[0]))
-
-        grid_shapes = [K.cast(K.shape(y_pred[l])[1:3], K.dtype(y_true[0])) for l in range(num_layers) if not self.iou_method]
 
         m = K.shape(y_pred[0])[0]
         loss    = 0
@@ -89,12 +86,13 @@ class YOLOLoss(tf.keras.losses.Loss):
 
             box_loss_scale  = 2 - y_true[l][..., 2:3] * y_true[l][..., 3:4]
             
-            if self.iou_method:
+            if self.regression_box_loss.invariant_name == 'IOUloss':
                 raw_true_box    = y_true[l][..., 0:4]
                 iou_value       = self.regression_box_loss(pred_box, raw_true_box)
                 iou_value       = object_mask * iou_value
                 location_loss   = K.sum(iou_value)
             else:
+                grid_shapes = [K.cast(K.shape(y_pred[l])[1:3], K.dtype(y_true[0])) for l in range(num_layers)]
                 raw_true_xy     = y_true[l][..., :2] * grid_shapes[l][::-1] - grid
                 raw_true_wh     = K.log(y_true[l][..., 2:4] / self.anchors[self.anchors_mask[l]] * input_shape[::-1])
 
