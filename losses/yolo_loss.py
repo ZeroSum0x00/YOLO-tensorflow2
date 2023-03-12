@@ -4,8 +4,9 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 
 from utils.bboxes import get_anchors_and_decode
-from utils.iou import box_iou, iou_loss
+from utils.iou import box_iou
 from configs import general_config as cfg
+from .regression_loss.iou_loss import IOUloss
 
 
 class YOLOLoss(tf.keras.losses.Loss):
@@ -42,6 +43,8 @@ class YOLOLoss(tf.keras.losses.Loss):
         self.focal_loss_ratio  = focal_loss_ratio
         self.focal_alpha_ratio = focal_alpha_ratio
         self.focal_gamma_ratio = focal_gamma_ratio
+
+        self.regression_box_loss = IOUloss(iou_method=iou_method)
 
     def _smooth_labels(self, y_true, label_smoothing):
         label_smoothing = K.constant(label_smoothing, dtype=tf.float32)
@@ -88,8 +91,8 @@ class YOLOLoss(tf.keras.losses.Loss):
             
             if self.iou_method:
                 raw_true_box    = y_true[l][..., 0:4]
-                iou_value       = iou_loss(pred_box, raw_true_box, iou_method=self.iou_method)
-                iou_value       = object_mask * (1 - iou_value)
+                iou_value       = self.regression_box_loss(pred_box, raw_true_box)
+                iou_value       = object_mask * iou_value
                 location_loss   = K.sum(iou_value)
             else:
                 raw_true_xy     = y_true[l][..., :2] * grid_shapes[l][::-1] - grid
