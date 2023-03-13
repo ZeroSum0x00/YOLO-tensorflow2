@@ -1,4 +1,3 @@
-tensorflow==2.9.0
 opencv-python
 scikit-learn
 matplotlib
