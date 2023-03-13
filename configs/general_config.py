@@ -128,6 +128,8 @@ TRAIN_SAVE_WEIGHT_FREQUENCY     = 50
 
 TRAIN_SAVED_PATH                = './saved_weights/'
 
+TRAIN_MODE                      = 'graph'
+
 
 # Inference (validation-testing-predict) hyper-parameters
 TEST_CONFIDENCE_THRESHOLD       = 0.05
