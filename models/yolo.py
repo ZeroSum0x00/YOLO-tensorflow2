@@ -77,7 +77,7 @@ class YOLO(tf.keras.Model):
         if save_head:
             self.encoder.save_weights(weight_path, save_format=save_format, **kwargs)
         else:
-            backup_model = copy.deepcopy(self.encoder)
+            backup_model = Model(inputs=self.encoder.input, outputs=self.encoder.output)
             backup_model.get_layer("medium_bbox_predictor").pop()
             backup_model.get_layer("large_bbox_predictor").pop()
             backup_model.get_layer("small_bbox_predictor").pop()
