@@ -2,8 +2,6 @@ import copy
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input
-from tensorflow.keras.layers import Lambda
 from tensorflow.keras.models import load_model
 
 from utils.logger import logger
@@ -15,9 +13,10 @@ class YOLO(tf.keras.Model):
                  image_size=(416, 416, 3), 
                  **kwargs):
         super(YOLO, self).__init__(**kwargs)
-        self.architecture = architecture
-        self.image_size = image_size
-        self.total_loss_tracker = tf.keras.metrics.Mean(name="total_loss")
+        self.architecture            = architecture
+        self.architecture.input_size = image_size
+        self.image_size              = image_size
+        self.total_loss_tracker      = tf.keras.metrics.Mean(name="total_loss")
 
     def compile(self, optimizer, loss, **kwargs):
         super(YOLO, self).compile(**kwargs)
