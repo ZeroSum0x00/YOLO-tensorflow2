@@ -128,21 +128,33 @@ class FPNLayer(tf.keras.layers.Layer):
         return P3, P4, P5
     
 
-class YOLOv3Encoder(tf.keras.Model):
+class YOLOv3(tf.keras.Model):
     def __init__(self, 
                  backbone,
-                 num_classes     = 80,
-                 num_anchor      = 3,
+                 num_classes     = cfg.NUM_CLASSES,
+                 strides         = cfg.YOLO_STRIDES,
+                 anchors         = cfg.YOLO_ANCHORS,
+                 anchor_mask     = cfg.YOLO_ANCHORS_MASK,
                  activation      = cfg.YOLO_ACTIVATION, 
-                 norm_layer      = cfg.YOLO_NORMALIZATION, 
-                 name            = "YOLOv3Encoder", 
+                 norm_layer      = cfg.YOLO_NORMALIZATION,
+                 max_boxes       = cfg.YOLO_MAX_BBOXES,
+                 nms_iou         = cfg.TEST_IOU_THRESHOLD,
+                 input_size      = cfg.YOLO_TARGET_SIZE,
+                 gray_padding    = True,
+                 name            = "YOLOv3", 
                  **kwargs):
-        super(YOLOv3Encoder, self).__init__(name=name, **kwargs)
+        super(YOLOv3, self).__init__(name=name, **kwargs)
         self.backbone       = backbone
         self.num_classes    = num_classes
-        self.num_anchor     = num_anchor
+        self.anchors        = anchors
+        self.num_anchors    = len(anchors) // len(strides)
+        self.anchor_mask    = anchor_mask
         self.activation     = activation
         self.norm_layer     = norm_layer
+        self.max_boxes      = max_boxes
+        self.nms_iou        = nms_iou
+        self.input_size     = input_size
+        self.gray_padding   = gray_padding
 
     def build(self, input_shape):
         self.neck       = FPNLayer(self.activation, self.norm_layer, name="FPNLayer")
@@ -153,9 +165,9 @@ class YOLOv3Encoder(tf.keras.Model):
     def _yolo_head(self, filters, activation='leaky', norm_layer='batchnorm', name='upsample_block'):
         return Sequential([
             ConvolutionBlock(filters, 3, False, activation, norm_layer),
-            ConvolutionBlock(self.num_anchor*(self.num_classes + 5), 1, False, None, None)
+            ConvolutionBlock(self.num_anchors*(self.num_classes + 5), 1, False, None, None)
         ], name=name)
-
+        
     def call(self, inputs, training=False):
         P3, P4, P5 = self.backbone(inputs, training=training)
         P3, P4, P5 = self.neck([P3, P4, P5], training=training)
@@ -164,29 +176,8 @@ class YOLOv3Encoder(tf.keras.Model):
         P3_out     = self.conv_sbbox(P3, training=training)
         return P5_out, P4_out, P3_out
 
-
-class YOLOv3Decoder:
-    def __init__(self,
-                 anchors,
-                 num_classes,
-                 input_size,
-                 anchor_mask     = [[6, 7, 8], [3, 4, 5], [0, 1, 2]],
-                 max_boxes       = 100,
-                 confidence      = 0.5,
-                 nms_iou         = 0.3,
-                 letterbox_image = True):
-        self.anchors = np.array(anchors)
-        self.num_classes = num_classes
-        self.input_size = input_size
-        self.anchor_mask = np.array(anchor_mask)
-        self.max_boxes = max_boxes
-        self.confidence = confidence
-        self.nms_iou = nms_iou
-        self.letterbox_image = letterbox_image
-    
-    def decode_caculator(self, inputs):
+    def decode(self, inputs):
         image_shape = K.reshape(inputs[-1],[-1])
-
         box_xy = []
         box_wh = []
         box_confidence  = []
@@ -202,7 +193,7 @@ class YOLOv3Decoder:
         box_confidence  = K.concatenate(box_confidence, axis = 0)
         box_class_probs = K.concatenate(box_class_probs, axis = 0)
 
-        boxes       = yolo_correct_boxes(box_xy, box_wh, self.input_size[:-1], image_shape, self.letterbox_image)
+        boxes       = yolo_correct_boxes(box_xy, box_wh, self.input_size[:-1], image_shape, self.gray_padding)
 
         box_scores  = box_confidence * box_class_probs
 
@@ -229,6 +220,3 @@ class YOLOv3Decoder:
         scores_out     = K.concatenate(scores_out, axis=0)
         classes_out    = K.concatenate(classes_out, axis=0)
         return boxes_out, scores_out, classes_out
-
-    def __call__(self, inputs):
-        return Lambda(self.decode_caculator)(inputs)
