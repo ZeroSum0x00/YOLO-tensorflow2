@@ -138,6 +138,7 @@ class YOLOv3(tf.keras.Model):
                  activation      = cfg.YOLO_ACTIVATION, 
                  norm_layer      = cfg.YOLO_NORMALIZATION,
                  max_boxes       = cfg.YOLO_MAX_BBOXES,
+                 confidence      = 0.5,
                  nms_iou         = cfg.TEST_IOU_THRESHOLD,
                  input_size      = cfg.YOLO_TARGET_SIZE,
                  gray_padding    = True,
@@ -146,12 +147,13 @@ class YOLOv3(tf.keras.Model):
         super(YOLOv3, self).__init__(name=name, **kwargs)
         self.backbone       = backbone
         self.num_classes    = num_classes
-        self.anchors        = anchors
+        self.anchors        = np.array(anchors)
         self.num_anchors    = len(anchors) // len(strides)
-        self.anchor_mask    = anchor_mask
+        self.anchor_mask    = np.array(anchor_mask)
         self.activation     = activation
         self.norm_layer     = norm_layer
         self.max_boxes      = max_boxes
+        self.confidence     = confidence
         self.nms_iou        = nms_iou
         self.input_size     = input_size
         self.gray_padding   = gray_padding
