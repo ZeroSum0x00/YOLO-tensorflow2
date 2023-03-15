@@ -128,7 +128,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 f.write("\n")
             
             plt.figure()
-            plt.plot(self.epoches, self.maps, 'red', linewidth = 2, label='train map')
+            plt.plot(self.epoches, self.maps, 'red', linewidth = 2, label='mAP map')
 
             plt.grid(True)
             plt.xlabel('Epoch')
