@@ -132,7 +132,6 @@ class YOLOv3(tf.keras.Model):
     def __init__(self, 
                  backbone,
                  num_classes     = cfg.NUM_CLASSES,
-                 strides         = cfg.YOLO_STRIDES,
                  anchors         = cfg.YOLO_ANCHORS,
                  anchor_mask     = cfg.YOLO_ANCHORS_MASK,
                  activation      = cfg.YOLO_ACTIVATION, 
@@ -145,18 +144,18 @@ class YOLOv3(tf.keras.Model):
                  name            = "YOLOv3", 
                  **kwargs):
         super(YOLOv3, self).__init__(name=name, **kwargs)
-        self.backbone       = backbone
-        self.num_classes    = num_classes
-        self.anchors        = np.array(anchors)
-        self.num_anchors    = len(anchors) // len(strides)
-        self.anchor_mask    = np.array(anchor_mask)
-        self.activation     = activation
-        self.norm_layer     = norm_layer
-        self.max_boxes      = max_boxes
-        self.confidence     = confidence
-        self.nms_iou        = nms_iou
-        self.input_size     = input_size
-        self.gray_padding   = gray_padding
+        self.backbone             = backbone
+        self.num_classes          = num_classes
+        self.anchors              = np.array(anchors)
+        self.num_anchor_per_scale = len(anchor_mask)
+        self.anchor_mask          = np.array(anchor_mask)
+        self.activation           = activation
+        self.norm_layer           = norm_layer
+        self.max_boxes            = max_boxes
+        self.confidence           = confidence
+        self.nms_iou              = nms_iou
+        self.input_size           = input_size
+        self.gray_padding         = gray_padding
 
     def build(self, input_shape):
         self.neck       = FPNLayer(self.activation, self.norm_layer, name="FPNLayer")
@@ -167,7 +166,7 @@ class YOLOv3(tf.keras.Model):
     def _yolo_head(self, filters, activation='leaky', norm_layer='batchnorm', name='upsample_block'):
         return Sequential([
             ConvolutionBlock(filters, 3, False, activation, norm_layer),
-            ConvolutionBlock(self.num_anchors*(self.num_classes + 5), 1, False, None, None)
+            ConvolutionBlock(self.num_anchor_per_scale*(self.num_classes + 5), 1, False, None, None)
         ], name=name)
         
     def call(self, inputs, training=False):
