@@ -10,14 +10,14 @@ from augmenter.photometric.light_photometric_ops import LightIntensityChange
 
 target_size=(416, 416, 3)
 max_bboxes=100
-
+color_space = "RGB"
 
 basic_augmenter = {
     'train': {
         'main': [
             ResizePadded(target_size=target_size, max_boxes=max_bboxes, jitter=.3, flexible=True),
             RandomFlip(mode='horizontal'),
-            LightIntensityChange(hue=.1, sat=0.7, val=0.4),
+            LightIntensityChange(hue=.1, sat=0.7, val=0.4, color_space=color_space),
         ],
         'auxiliary': [ResizePadded(target_size=target_size, max_boxes=max_bboxes, jitter=.3, flexible=True)],
         'merge': [Mixup(target_size=target_size, max_bboxes=max_bboxes)]
