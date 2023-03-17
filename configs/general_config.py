@@ -1,5 +1,5 @@
 # import config parameters
-from augmenter.augmentation import basic_augmenter, endemic_augmenter
+from augmenter import *
 from utils.post_processing import get_labels
 
 
@@ -68,9 +68,43 @@ DATA_ANNOTATION_PATH            = None
 
 DATA_DESTINATION_PATH           = None
 
-DATA_AUGMENTATION               = basic_augmenter
+DATA_COLOR_SPACE                = 'RGB'
 
-DATA_ENDEMIC_AUGMENTATION       = endemic_augmenter
+DATA_AUGMENTATION               = {
+                                      'train': {
+                                          'main': [
+                                              ResizePadded(target_size=YOLO_TARGET_SIZE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=True),
+                                              RandomFlip(mode='horizontal'),
+                                              LightIntensityChange(hue=.1, sat=0.7, val=0.4, color_space=DATA_COLOR_SPACE),
+                                          ],
+                                          'auxiliary': None,
+                                          'merge': None
+                                      },
+                                      'valid': {
+                                          'main': [ResizePadded(target_size=YOLO_TARGET_SIZE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=False)],
+                                          'auxiliary': None,
+                                          'merge': None
+                                      },
+                                      'test': {
+                                          'main': [ResizePadded(target_size=YOLO_TARGET_SIZE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=False)],
+                                          'auxiliary': None,
+                                          'merge': None
+                                      }
+}
+
+DATA_ENDEMIC_AUGMENTATION       = {
+                                      'train': {
+                                          'main': [
+                                              Mosaic(target_size=YOLO_TARGET_SIZE, max_bboxes=YOLO_MAX_BBOXES),
+                                              RandomFlip(mode='horizontal'),
+                                              LightIntensityChange(hue=.1, sat=0.7, val=0.4, color_space=DATA_COLOR_SPACE),
+                                          ],
+                                          'auxiliary': [ResizePadded(target_size=YOLO_TARGET_SIZE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=True)],
+                                          'merge': [Mixup(target_size=YOLO_TARGET_SIZE, max_bboxes=YOLO_MAX_BBOXES)]
+                                      },
+                                      'valid': None,
+                                      'test':  None
+}
 
 DATA_ENDEMIC_AUGMENTATION_PROBA = 0.5
 
@@ -79,8 +113,6 @@ DATA_ENDEMIC_AUGMENTATION_RATIO = 0.7
 DATA_NORMALIZER                 = 'divide'
 
 DATA_TYPE                       = 'voc'
-
-DATA_COLOR_SPACE                = 'RGB'
 
 CHECK_DATA                      = False
 
