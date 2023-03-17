@@ -5,8 +5,8 @@ from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import CSVLogger
 
-from models.yolov3 import YOLOv3Encoder, YOLOv3Decoder
 from models.architectures.darknet53 import DarkNet53
+from models.yolov3 import YOLOv3
 from models.yolo import YOLO
 from losses.yolo_loss import YOLOLoss
 from data_utils.data_flow import get_train_test_data
@@ -22,6 +22,7 @@ from configs import general_config as cfg
 def train(data_path                   = cfg.DATA_PATH,
           data_anno_path              = cfg.DATA_ANNOTATION_PATH,
           data_dst_path               = cfg.DATA_DESTINATION_PATH,
+          color_space                 = cfg.DATA_COLOR_SPACE,
           data_normalizer             = cfg.DATA_NORMALIZER,
           data_augmentation           = cfg.DATA_AUGMENTATION,
           data_endemic_augmentor      = cfg.DATA_ENDEMIC_AUGMENTATION,
@@ -87,6 +88,7 @@ def train(data_path                   = cfg.DATA_PATH,
                                                              max_bboxes              = max_bboxes,
                                                              init_epoch              = init_epoch,
                                                              end_epoch               = end_epoch,
+                                                             color_space             = color_space,
                                                              augmentor               = data_augmentation,
                                                              endemic_augmentor       = data_endemic_augmentor,
                                                              endemic_augmentor_proba = endemic_augmentor_proba,
@@ -97,28 +99,23 @@ def train(data_path                   = cfg.DATA_PATH,
                                                              load_memory             = load_memory,
                                                              exclude_difficult       = exclude_difficult,
                                                              exclude_truncated       = exclude_truncated)
-
+        
         backbone = DarkNet53(input_shape   = input_shape, 
                              activation    = yolo_backbone_activation, 
                              norm_layer    = yolo_backbone_normalization, 
                              model_weights = yolo_backbone_weight)
 
-        encoder = YOLOv3Encoder(backbone    = backbone,
-                                num_classes = num_classes, 
-                                num_anchor  = 3,
-                                activation  = yolo_activation,
-                                norm_layer  = yolo_normalization)
+        architecture = YOLOv3(backbone     = backbone,
+                              num_classes  = num_classes,
+                              anchors      = yolo_anchors,
+                              anchor_mask  = yolo_anchors_mask,
+                              activation   = yolo_activation, 
+                              norm_layer   = yolo_normalization,
+                              max_boxes    = max_bboxes,
+                              nms_iou      = iou_threshold,
+                              gray_padding = True)
 
-        decoder = YOLOv3Decoder(anchors     = yolo_anchors,
-                                num_classes = num_classes,
-                                input_size  = input_shape,
-                                anchor_mask = yolo_anchors_mask,
-                                max_boxes   = max_bboxes,
-                                confidence  = confidence_threshold,
-                                nms_iou     = iou_threshold,
-                                letterbox_image=True)
-
-        model = YOLO(encoder, decoder)
+        model = YOLO(architecture, image_size=input_shape)
 
         if weight_type and weight_objects:
             if weight_type == "weights":
