@@ -9,6 +9,7 @@ from sklearn.utils import shuffle
 from data_utils.data_processing import extract_data_folder, get_data, Normalizer, preprocess_true_boxes
 from data_utils.data_augmentation import Augmentor, EndemicAugmentor
 from utils.auxiliary_processing import random_range, change_color_space
+from utils.logger import logger
 from configs import general_config as cfg
 
 
@@ -169,6 +170,7 @@ class Train_Data_Sequence(Sequence):
         self.endemic_augmentor_ratio = endemic_augmentor_ratio
         self.current_epoch = init_epoch
         self.end_epoch = end_epoch
+        self.color_space = color_space
 
     def __len__(self):
         return int(np.ceil(self.N / float(self.batch_size)))
@@ -287,6 +289,7 @@ class Valid_Data_Sequence(Sequence):
         self.endemic_augmentor_ratio = endemic_augmentor_ratio
         self.current_epoch = init_epoch
         self.end_epoch = end_epoch
+        self.color_space = color_space
 
     def __len__(self):
         return int(np.ceil(self.N / float(self.batch_size)))
@@ -404,6 +407,7 @@ class Test_Data_Sequence(Sequence):
         self.endemic_augmentor_ratio = endemic_augmentor_ratio
         self.current_epoch = init_epoch
         self.end_epoch = end_epoch
+        self.color_space = color_space
 
     def __len__(self):
         return int(np.ceil(self.N / float(self.batch_size)))
