@@ -11,6 +11,7 @@ from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import Activation
 from tensorflow.keras import backend as K
 from tensorflow.keras.regularizers import l2
+from tensorflow.keras.initializers import RandomNormal
 
 from models.layers.normalization import FrozenBatchNormalization
 from models.layers.activations import Mish
@@ -21,18 +22,20 @@ from configs import general_config as cfg
 class ConvolutionBlock(tf.keras.layers.Layer):
     def __init__(self, 
                  filters, 
-                 kernel_size = 3, 
-                 downsample  = False, 
-                 activation  = cfg.YOLO_ACTIVATION, 
-                 norm_layer  = cfg.YOLO_NORMALIZATION, 
+                 kernel_size       = 3, 
+                 downsample        = False, 
+                 activation        = cfg.YOLO_ACTIVATION, 
+                 norm_layer        = cfg.YOLO_NORMALIZATION, 
+                 regularizer_decay = 5e-4,
                  **kwargs):
         super(ConvolutionBlock, self).__init__(**kwargs)
-        self.filters = filters
-        self.kernel_size = kernel_size
-        self.downsample  = downsample
-        self.activation  = activation
-        self.norm_layer  = norm_layer
-
+        self.filters           = filters
+        self.kernel_size       = kernel_size
+        self.downsample        = downsample
+        self.activation        = activation
+        self.norm_layer        = norm_layer
+        self.regularizer_decay = regularizer_decay
+        
         if downsample:
             self.padding = 'valid'
             self.strides = 2
@@ -47,9 +50,8 @@ class ConvolutionBlock(tf.keras.layers.Layer):
                            strides=self.strides,
                            padding=self.padding, 
                            use_bias=False if self.norm_layer else True, 
-                           kernel_regularizer=l2(0.0005),
-                           kernel_initializer=tf.random_normal_initializer(stddev=0.01),
-                           bias_initializer=tf.constant_initializer(0.))
+                           kernel_initializer=RandomNormal(stddev=0.02),
+                           kernel_regularizer=l2(self.regularizer_decay))
         self.norm_layer = self.__get_norm_from_name(self.norm_layer)
         self.activation = self.__get_activation_from_name(self.activation)
 
