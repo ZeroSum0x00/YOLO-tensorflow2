@@ -80,6 +80,8 @@ DATA_NORMALIZER                 = 'divide'
 
 DATA_TYPE                       = 'voc'
 
+DATA_COLOR_SPACE                = 'RGB'
+
 CHECK_DATA                      = False
 
 DATA_LOAD_MEMORY                = False
