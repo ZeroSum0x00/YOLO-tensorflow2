@@ -7,6 +7,7 @@ import tensorflow as tf
 
 from utils.calc_map import get_coco_map, get_map
 from utils.post_processing import resize_image, preprocess_input
+from utils.auxiliary_processing import change_color_space
 from utils.logger import logger
 from configs import general_config as cfg
 
@@ -24,6 +25,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                  max_bboxes     = cfg.YOLO_MAX_BBOXES, 
                  minoverlap     = cfg.TEST_MIN_OVERLAP,
                  mode           = 'voc',
+                 color_space    = 'BGR',
                  saved_best_map = True,
                  show_frequency = cfg.TRAIN_RESULT_SHOW_FREQUENCY):
         super(mAPEvaluate, self).__init__()
@@ -35,6 +37,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
         self.max_bboxes           = max_bboxes
         self.minoverlap           = minoverlap
         self.mode                 = mode
+        self.color_space          = color_space
         self.saved_best_map       = saved_best_map
         self.show_frequency       = show_frequency
         self.map_out_path         = result_path + ".temp_map_out"
@@ -89,6 +92,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 img_path = self.data_path + ann_dataset['filename']
                 
                 image = cv2.imread(img_path)
+                image = change_color_space(image, 'bgr', self.color_space)
                 original_image_shape = image.shape
                 
                 gt_boxes = ann_dataset['bboxes']
