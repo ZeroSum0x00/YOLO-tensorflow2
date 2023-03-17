@@ -11,6 +11,7 @@ from tensorflow.keras.regularizers import l2
 from tensorflow.keras.initializers import RandomNormal
 
 from models.layers import get_activation_from_name, get_normalization_from_name
+from utils.logger import logger
 from configs import general_config as cfg
 
 
@@ -79,6 +80,7 @@ def DarkNet53(input_shape, activation='leaky', norm_layer='batchnorm', model_wei
     if model_weights:
 #         load_yolo_weights(model, model_weights)
           model.load_weights(model_weights, by_name=True, skip_mismatch=True)
+          logger.info("Load DarkNet-53 weights from {}".format(model_weights))
     return model
 
 
@@ -139,4 +141,5 @@ def CSPDarkNet53(input_shape, activation='mish', norm_layer='batchnorm', model_w
     model = Model(inputs=input_data, outputs=[x])
     if model_weights:
           model.load_weights(model_weights, by_name=True, skip_mismatch=True)
+          logger.info("Load CSPDarkNet-53 weights from {}".format(model_weights))
     return model
