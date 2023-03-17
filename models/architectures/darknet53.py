@@ -137,6 +137,8 @@ def CSPDarkNet53(input_shape, activation='mish', norm_layer='batchnorm', model_w
     x = CSPDarkNetBlock(x, [512, 512], 4, activation=activation, norm_layer=norm_layer)
 
     model = Model(inputs=input_data, outputs=[x])
+    if model_weights:
+          model.load_weights(model_weights, by_name=True, skip_mismatch=True)
     return model
 
 
