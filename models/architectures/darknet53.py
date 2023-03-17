@@ -77,7 +77,8 @@ def DarkNet53(input_shape, activation='leaky', norm_layer='batchnorm', model_wei
     
     model = Model(inputs=input_data, outputs=[route_1, route_2, x])
     if model_weights:
-        load_yolo_weights(model, model_weights)
+#         load_yolo_weights(model, model_weights)
+          model.load_weights(model_weights, by_name=True, skip_mismatch=True)
     return model
 
 
