@@ -8,12 +8,13 @@ from tensorflow.keras.layers import concatenate
 from tensorflow.keras.layers import add
 from tensorflow.keras import backend as K
 from tensorflow.keras.regularizers import l2
+from tensorflow.keras.initializers import RandomNormal
 
 from models.layers import get_activation_from_name, get_normalization_from_name
 from configs import general_config as cfg
 
 
-def convolutional_block(x, filters, kernel_size, downsample=False, activation='leaky', norm_layer='batchnorm'):
+def convolutional_block(x, filters, kernel_size, downsample=False, activation='leaky', norm_layer='batchnorm', regularizer_decay=5e-4):
     if downsample:
         x = ZeroPadding2D(((1, 0), (1, 0)))(x)
         padding = 'valid'
@@ -27,9 +28,8 @@ def convolutional_block(x, filters, kernel_size, downsample=False, activation='l
                strides=strides,
                padding=padding, 
                use_bias=not norm_layer, 
-               kernel_regularizer=l2(0.0005),
-               kernel_initializer=tf.random_normal_initializer(stddev=0.01),
-               bias_initializer=tf.constant_initializer(0.))(x)
+               kernel_initializer=RandomNormal(stddev=0.02),
+               kernel_regularizer=l2(regularizer_decay))(x)
     if norm_layer:
         x = get_normalization_from_name(x, norm_layer)
     if activation:
