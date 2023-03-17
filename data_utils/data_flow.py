@@ -8,8 +8,7 @@ from sklearn.utils import shuffle
 
 from data_utils.data_processing import extract_data_folder, get_data, Normalizer, preprocess_true_boxes
 from data_utils.data_augmentation import Augmentor, EndemicAugmentor
-from utils.auxiliary_processing import random_range
-from utils.logger import logger
+from utils.auxiliary_processing import random_range, change_color_space
 from configs import general_config as cfg
 
 
@@ -124,6 +123,7 @@ class Train_Data_Sequence(Sequence):
                  yolo_anchors            = cfg.YOLO_ANCHORS,
                  yolo_anchors_mask       = cfg.YOLO_ANCHORS_MASK,
                  max_bboxes              = cfg.YOLO_MAX_BBOXES,
+                 color_space             = cfg.DATA_COLOR_SPACE,
                  normalizer              = cfg.DATA_NORMALIZER,
                  augmentor               = cfg.DATA_AUGMENTATION['train'],
                  endemic_augmentor       = cfg.DATA_ENDEMIC_AUGMENTATION['train'],
@@ -173,6 +173,7 @@ class Train_Data_Sequence(Sequence):
     def get_samples(self, sample):
         img_path = self.data_path + sample['filename']
         image = cv2.imread(img_path)
+        image = change_color_space(image, 'bgr', self.color_space)
         box   = np.array(sample['bboxes'])
         return image, box
 
@@ -204,6 +205,7 @@ class Train_Data_Sequence(Sequence):
                 sample = self.dataset[i]
                 img_path = self.data_path + sample['filename']
                 images = cv2.imread(img_path)
+                images = change_color_space(images, 'bgr', self.color_space)
                 bboxes = np.array(sample['bboxes'])
 
             if self.augmentor and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
@@ -288,6 +290,7 @@ class Valid_Data_Sequence(Sequence):
     def get_samples(self, sample):
         img_path = self.data_path + sample['filename']
         image = cv2.imread(img_path)
+        image = change_color_space(image, 'bgr', self.color_space)
         box   = np.array(sample['bboxes'])
         return image, box
 
@@ -319,6 +322,7 @@ class Valid_Data_Sequence(Sequence):
                 sample = self.dataset[i]
                 img_path = self.data_path + sample['filename']
                 images = cv2.imread(img_path)
+                images = change_color_space(images, 'bgr', self.color_space)
                 bboxes = np.array(sample['bboxes'])
 
             if self.augmentor and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
@@ -402,6 +406,7 @@ class Test_Data_Sequence(Sequence):
     def get_samples(self, sample):
         img_path = self.data_path + sample['filename']
         image = cv2.imread(img_path)
+        image = change_color_space(image, 'bgr', self.color_space)
         box   = np.array(sample['bboxes'])
         return image, box
 
@@ -433,6 +438,7 @@ class Test_Data_Sequence(Sequence):
                 sample = self.dataset[i]
                 img_path = self.data_path + sample['filename']
                 images = cv2.imread(img_path)
+                images = change_color_space(images, 'bgr', self.color_space)
                 bboxes = np.array(sample['bboxes'])
 
             if self.augmentor and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
