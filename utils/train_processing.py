@@ -36,3 +36,8 @@ def create_folder_weights(saved_dir):
         return verify_folder(TRAINING_TIME_PATH)
     except: 
         logger.error("Creation of the directory %s failed" % TRAINING_TIME_PATH)
+        
+
+def log_training_time(saved_dir):
+    f = open(f"{saved_dir}/train_time.log", 'w')
+    sys.stdout = f
