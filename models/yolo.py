@@ -99,7 +99,13 @@ class YOLO(tf.keras.Model):
             if weight_path:
                 self.architecture = load_model(weight_path, custom_objects=custom_objects)
                 logger.info("Load yolo model from {}".format(weight_path))
-
+                
+    def summary(self):
+        self.architecture.print_summary(self.image_size)
+        
+    def plot_model(self, saved_path=""):
+        self.architecture.plot_model(self.image_size, saved_path)
+        
     def get_config(self):
         config = super().get_config()
         config.update({
