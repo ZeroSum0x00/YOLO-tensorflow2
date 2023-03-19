@@ -225,7 +225,7 @@ class YOLOv3(tf.keras.Model):
         classes_out    = K.concatenate(classes_out, axis=0)
         return boxes_out, scores_out, classes_out
 
-      def print_summary(self, input_shape):
+    def print_summary(self, input_shape):
         self.build(input_shape)
         o = Input(shape=input_shape, name='Input')
         yolo_model = Model(inputs=[o], outputs=self.call(o), name='YOLOv3').summary()
