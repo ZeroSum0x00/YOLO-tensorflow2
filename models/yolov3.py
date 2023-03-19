@@ -13,6 +13,7 @@ from tensorflow.keras.layers import Activation
 from tensorflow.keras import backend as K
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.initializers import RandomNormal
+from tensorflow.keras.utils import plot_model
 
 from models.layers.normalization import FrozenBatchNormalization
 from models.layers.activations import Mish
