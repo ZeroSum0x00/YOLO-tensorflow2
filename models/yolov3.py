@@ -18,6 +18,7 @@ from tensorflow.keras.utils import plot_model
 from models.layers.normalization import FrozenBatchNormalization
 from models.layers.activations import Mish
 from utils.bboxes import yolo_correct_boxes, get_anchors_and_decode
+from utils.logger import logger
 from configs import general_config as cfg
 
 
@@ -237,5 +238,6 @@ class YOLOv3(tf.keras.Model):
         o = Input(shape=input_shape, name='Input')
         yolo_model = Model(inputs=[o], outputs=self.call(o))
         plot_model(yolo_model, to_file=f'{saved_path}/plot_model.png', show_shapes=True)
+        logger.info(f"Saved model graph in {saved_path}")
         del o
         del yolo_model
