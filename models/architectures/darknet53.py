@@ -76,11 +76,10 @@ def DarkNet53(input_shape, activation='leaky', norm_layer='batchnorm', model_wei
     for i in range(4):
         x = residual_block(x, [512, 1024], activation=activation, norm_layer=norm_layer)
     
-    model = Model(inputs=input_data, outputs=[route_1, route_2, x])
+    model = Model(inputs=input_data, outputs=[route_1, route_2, x], name='DarkNet-53')
     if model_weights:
-#         load_yolo_weights(model, model_weights)
-          model.load_weights(model_weights, by_name=True, skip_mismatch=True)
-          logger.info("Load DarkNet-53 weights from {}".format(model_weights))
+        model.load_weights(model_weights)
+        logger.info("Load DarkNet-53 weights from {}".format(model_weights))
     return model
 
 
@@ -138,8 +137,8 @@ def CSPDarkNet53(input_shape, activation='mish', norm_layer='batchnorm', model_w
     # CSPResBlock 5
     x = CSPDarkNetBlock(x, [512, 512], 4, activation=activation, norm_layer=norm_layer)
 
-    model = Model(inputs=input_data, outputs=[x])
+    model = Model(inputs=input_data, outputs=[x], name="CSPDarkNet-53")
     if model_weights:
-          model.load_weights(model_weights, by_name=True, skip_mismatch=True)
-          logger.info("Load CSPDarkNet-53 weights from {}".format(model_weights))
+        model.load_weights(model_weights)
+        logger.info("Load CSPDarkNet-53 weights from {}".format(model_weights))
     return model
