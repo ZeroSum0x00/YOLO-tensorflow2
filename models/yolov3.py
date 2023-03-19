@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import ZeroPadding2D
 from tensorflow.keras.layers import BatchNormalization
@@ -223,3 +224,17 @@ class YOLOv3(tf.keras.Model):
         scores_out     = K.concatenate(scores_out, axis=0)
         classes_out    = K.concatenate(classes_out, axis=0)
         return boxes_out, scores_out, classes_out
+
+      def print_summary(self, input_shape):
+        self.build(input_shape)
+        o = Input(shape=input_shape, name='Input')
+        yolo_model = Model(inputs=[o], outputs=self.call(o), name='YOLOv3').summary()
+        del yolo_model
+    
+    def plot_model(self, input_shape, saved_path=""):
+        self.build(input_shape)
+        o = Input(shape=input_shape, name='Input')
+        yolo_model = Model(inputs=[o], outputs=self.call(o))
+        plot_model(yolo_model, to_file=f'{saved_path}/plot_model.png', show_shapes=True)
+        del o
+        del yolo_model
