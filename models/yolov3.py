@@ -248,6 +248,8 @@ class YOLOv3(tf.keras.Model):
         self.build(input_shape)
         o = Input(shape=input_shape, name='Input')
         yolo_model = Model(inputs=[o], outputs=self.call(o))
-        plot_model(yolo_model, to_file=f'{saved_path}/plot_model.png', show_shapes=True)
-        logger.info(f"Saved model graph in {saved_path}")
+        plot_model(yolo_model, to_file=f'{saved_path}/yolo_model.png', show_shapes=True)
+        self.neck.plot_model(input_shape, saved_path)
+        plot_model(self.backbone, to_file=f'{saved_path}/backbone_model.png', show_shapes=True)
+        logger.info(f"Saved models graph in {saved_path}")
         del o, yolo_model
