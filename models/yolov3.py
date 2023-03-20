@@ -95,8 +95,8 @@ class ConvolutionBlock(tf.keras.layers.Layer):
     
 class FPNLayer(tf.keras.layers.Layer):
     def __init__(self, 
-                 activation      = cfg.YOLO_ACTIVATION, 
-                 norm_layer      = cfg.YOLO_NORMALIZATION, 
+                 activation      = 's', 
+                 norm_layer      = 's', 
                  name            = "FPNLayer", 
                  **kwargs):
         super(FPNLayer, self).__init__(name=name, **kwargs)
@@ -110,16 +110,16 @@ class FPNLayer(tf.keras.layers.Layer):
         self.P4_up    = self._upsample_block(128, 2, self.activation, self.norm_layer)
         self.P3_block = self._conv_block([128, 256, 128, 256, 128], self.activation, self.norm_layer)
 
-    def _conv_block(self, num_filters, activation='leaky', norm_layer='batchnorm', name="conv_block"):
+    def _conv_block(self, num_filters, activation='leaky', norm_layer='batchnorm'):
         return Sequential([
             ConvolutionBlock(filters, 1 if i % 2 == 0 else 3, False, activation, norm_layer) for i, filters in enumerate(num_filters)
-        ], name=name)
+        ])
 
-    def _upsample_block(self, filters, upsample_size, activation='leaky', norm_layer='batchnorm', name='upsample_block'):
+    def _upsample_block(self, filters, upsample_size, activation='leaky', norm_layer='batchnorm'):
         return Sequential([
             ConvolutionBlock(filters, 1, False, activation, norm_layer),
             UpSampling2D(size=upsample_size,)
-        ], name=name)
+        ])
 
     def call(self, inputs, training=False):
         P3, P4, P5  = inputs
@@ -131,6 +131,17 @@ class FPNLayer(tf.keras.layers.Layer):
         P3          = tf.concat([P4_up, P3], axis=-1)
         P3          = self.P3_block(P3, training=training)
         return P3, P4, P5
+    
+    def plot_model(self, input_shape, saved_path=""):
+        large_shape = (input_shape[0]//8, input_shape[1]//8, 256)
+        medium_shape = (input_shape[0]//16, input_shape[1]//16, 512)
+        small_shape = (input_shape[0]//32, input_shape[1]//32, 1024)
+        o3 = Input(shape=large_shape, name='small_object_scale')
+        o4 = Input(shape=medium_shape, name='medium_object_scale')
+        o5 = Input(shape=small_shape, name='large_object_scale')
+        neck_model = Model(inputs=[o3, o4, o5], outputs=self.call([o3, o4, o5]))
+        plot_model(neck_model, to_file=f'{saved_path}/neck_model.png', show_shapes=True)
+        del o3, o4, o5, neck_model
     
 
 class YOLOv3(tf.keras.Model):
@@ -239,5 +250,4 @@ class YOLOv3(tf.keras.Model):
         yolo_model = Model(inputs=[o], outputs=self.call(o))
         plot_model(yolo_model, to_file=f'{saved_path}/plot_model.png', show_shapes=True)
         logger.info(f"Saved model graph in {saved_path}")
-        del o
-        del yolo_model
+        del o, yolo_model
