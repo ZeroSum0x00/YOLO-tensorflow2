@@ -140,7 +140,7 @@ class FPNLayer(tf.keras.layers.Layer):
         o4 = Input(shape=medium_shape, name='medium_object_scale')
         o5 = Input(shape=small_shape, name='large_object_scale')
         neck_model = Model(inputs=[o3, o4, o5], outputs=self.call([o3, o4, o5]))
-        plot_model(neck_model, to_file=f'{saved_path}/neck_model.png', show_shapes=True)
+        plot_model(neck_model, to_file=f'{saved_path}/{self.name}_architecture.png', show_shapes=True)
         del o3, o4, o5, neck_model
     
 
@@ -248,8 +248,8 @@ class YOLOv3(tf.keras.Model):
         self.build(input_shape)
         o = Input(shape=input_shape, name='Input')
         yolo_model = Model(inputs=[o], outputs=self.call(o))
-        plot_model(yolo_model, to_file=f'{saved_path}/yolo_model.png', show_shapes=True)
+        plot_model(yolo_model, to_file=f'{saved_path}/{self.name}_architecture.png', show_shapes=True)
         self.neck.plot_model(input_shape, saved_path)
-        plot_model(self.backbone, to_file=f'{saved_path}/backbone_model.png', show_shapes=True)
+        plot_model(self.backbone, to_file=f'{saved_path}/{self.backbone.name}_architecture.png', show_shapes=True)
         logger.info(f"Saved models graph in {saved_path}")
         del o, yolo_model
