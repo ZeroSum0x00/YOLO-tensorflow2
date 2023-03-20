@@ -2,9 +2,13 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import MaxPool2D
 from tensorflow.keras.layers import UpSampling2D
+from tensorflow.keras.layers import concatenate
+from tensorflow.keras.utils import plot_model
 from models.yolov3 import ConvolutionBlock
+from utils.logger import logger
 from configs import general_config as cfg
 
 
@@ -29,6 +33,13 @@ class SPPLayer(tf.keras.layers.Layer):
         x = concatenate([pooling_1, pooling_2, pooling_3, inputs], axis=-1)
         return x
 
+    def plot_model(self, input_shape, saved_path=""):
+        input_shape = (input_shape[0]//32, input_shape[1]//32, 512)
+        o = Input(shape=input_shape, name='Input')
+        model = Model(inputs=[o], outputs=self.call(o))
+        plot_model(model, to_file=f'{saved_path}/{self.name}_architecture.png', show_shapes=True)
+        del o, model
+        
 
 class PANLayer(tf.keras.layers.Layer):
     def __init__(self, 
@@ -52,16 +63,16 @@ class PANLayer(tf.keras.layers.Layer):
         self.P4_down   = ConvolutionBlock(512, 3, True, self.activation, self.norm_layer)
         self.P5_block1 = self._conv_block([512, 1024, 512, 1024, 512], self.activation, self.norm_layer)
 
-    def _conv_block(self, num_filters, activation='leaky', norm_layer='batchnorm', name="conv_block"):
+    def _conv_block(self, num_filters, activation='leaky', norm_layer='batchnorm'):
         return Sequential([
             ConvolutionBlock(filters, 1 if i % 2 == 0 else 3, False, activation, norm_layer) for i, filters in enumerate(num_filters)
-        ], name=name)
+        ])
 
-    def _upsample_block(self, filters, upsample_size, activation='leaky', norm_layer='batchnorm', name='upsample_block'):
+    def _upsample_block(self, filters, upsample_size, activation='leaky', norm_layer='batchnorm'):
         return Sequential([
             ConvolutionBlock(filters, 1, False, activation, norm_layer),
             UpSampling2D(size=upsample_size,)
-        ], name=name)
+        ])
 
     def call(self, inputs, training=False):
         P3, P4, P5  = inputs
@@ -81,22 +92,46 @@ class PANLayer(tf.keras.layers.Layer):
         P5      = self.P5_block1(P5, training=training)
         return P3, P4, P5
 
-
-class YOLOv4Encoder(tf.keras.Model):
+    def plot_model(self, input_shape, saved_path=""):
+        large_shape = (input_shape[0]//8, input_shape[1]//8, 256)
+        medium_shape = (input_shape[0]//16, input_shape[1]//16, 512)
+        small_shape = (input_shape[0]//32, input_shape[1]//32, 512)
+        o3 = Input(shape=large_shape, name='small_object_scale')
+        o4 = Input(shape=medium_shape, name='medium_object_scale')
+        o5 = Input(shape=small_shape, name='large_object_scale')
+        model = Model(inputs=[o3, o4, o5], outputs=self.call([o3, o4, o5]))
+        plot_model(model, to_file=f'{saved_path}/{self.name}_architecture.png', show_shapes=True)
+        del o3, o4, o5, model
+        
+        
+class YOLOv4(tf.keras.Model):
     def __init__(self, 
                  backbone,
                  num_classes     = 80,
-                 num_anchor      = 3,
+                 anchors         = cfg.YOLO_ANCHORS,
+                 anchor_mask     = cfg.YOLO_ANCHORS_MASK,
                  activation      = 'leaky', 
                  norm_layer      = 'bn', 
-                 name            = "YOLOv4Encoder", 
+                 max_boxes       = cfg.YOLO_MAX_BBOXES,
+                 confidence      = 0.5,
+                 nms_iou         = cfg.TEST_IOU_THRESHOLD,
+                 input_size      = cfg.YOLO_TARGET_SIZE,
+                 gray_padding    = True,
+                 name            = "YOLOv4", 
                  **kwargs):
-        super(YOLOv4Encoder, self).__init__(name=name, **kwargs)
-        self.backbone       = backbone
-        self.num_classes    = num_classes
-        self.num_anchor     = num_anchor
-        self.activation     = activation
-        self.norm_layer     = norm_layer
+        super(YOLOv4, self).__init__(name=name, **kwargs)
+        self.backbone             = backbone
+        self.num_classes          = num_classes
+        self.anchors              = np.array(anchors)
+        self.num_anchor_per_scale = len(anchor_mask)
+        self.anchor_mask          = np.array(anchor_mask)
+        self.activation           = activation
+        self.norm_layer           = norm_layer
+        self.max_boxes            = max_boxes
+        self.confidence           = confidence
+        self.nms_iou              = nms_iou
+        self.input_size           = input_size
+        self.gray_padding         = gray_padding
 
     def build(self, input_shape):
         self.block0     = self._conv_block([512, 1024, 512], self.activation, self.norm_layer, name='convolution_extractor_0')
@@ -115,7 +150,7 @@ class YOLOv4Encoder(tf.keras.Model):
     def _yolo_head(self, filters, activation='leaky', norm_layer='batchnorm', name='yolo_head'):
         return Sequential([
             ConvolutionBlock(filters, 3, False, activation, norm_layer),
-            ConvolutionBlock(self.num_anchor*(self.num_classes + 5), 1, False, None, None)
+            ConvolutionBlock(self.num_anchor_per_scale*(self.num_classes + 5), 1, False, None, None)
         ], name=name)
 
     def call(self, inputs, training=False):
@@ -130,29 +165,8 @@ class YOLOv4Encoder(tf.keras.Model):
         P5_out = self.conv_lbbox(P5, training=training)
         return P5_out, P4_out, P3_out
 
-
-class YOLOv4Decoder:
-    def __init__(self,
-                 anchors,
-                 num_classes,
-                 input_size,
-                 anchor_mask     = [[6, 7, 8], [3, 4, 5], [0, 1, 2]],
-                 max_boxes       = 100,
-                 confidence      = 0.5,
-                 nms_iou         = 0.3,
-                 letterbox_image = True):
-        self.anchors = np.array(anchors)
-        self.num_classes = num_classes
-        self.input_size = input_size
-        self.anchor_mask = np.array(anchor_mask)
-        self.max_boxes = max_boxes
-        self.confidence = confidence
-        self.nms_iou = nms_iou
-        self.letterbox_image = letterbox_image
-    
-    def decode_caculator(self, inputs):
+    def decode(self, inputs):
         image_shape = K.reshape(inputs[-1],[-1])
-
         box_xy = []
         box_wh = []
         box_confidence  = []
@@ -168,7 +182,7 @@ class YOLOv4Decoder:
         box_confidence  = K.concatenate(box_confidence, axis = 0)
         box_class_probs = K.concatenate(box_class_probs, axis = 0)
 
-        boxes       = yolo_correct_boxes(box_xy, box_wh, self.input_size[:-1], image_shape, self.letterbox_image)
+        boxes       = yolo_correct_boxes(box_xy, box_wh, self.input_size[:-1], image_shape, self.gray_padding)
 
         box_scores  = box_confidence * box_class_probs
 
@@ -196,5 +210,19 @@ class YOLOv4Decoder:
         classes_out    = K.concatenate(classes_out, axis=0)
         return boxes_out, scores_out, classes_out
 
-    def __call__(self, inputs):
-        return Lambda(self.decode_caculator)(inputs)
+    def print_summary(self, input_shape):
+        self.build(input_shape)
+        o = Input(shape=input_shape, name='Input')
+        yolo_model = Model(inputs=[o], outputs=self.call(o), name=self.name).summary()
+        del yolo_model
+    
+    def plot_model(self, input_shape, saved_path=""):
+        self.build(input_shape)
+        o = Input(shape=input_shape, name='Input')
+        yolo_model = Model(inputs=[o], outputs=self.call(o), name=self.name)
+        plot_model(yolo_model, to_file=f'{saved_path}/{self.name}_architecture.png', show_shapes=True)
+        self.spp.plot_model(input_shape, saved_path)
+        self.pan.plot_model(input_shape, saved_path)
+        plot_model(self.backbone, to_file=f'{saved_path}/{self.backbone.name}_architecture.png', show_shapes=True)
+        logger.info(f"Saved models graph in {saved_path}")
+        del o, yolo_model
