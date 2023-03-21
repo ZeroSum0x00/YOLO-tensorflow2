@@ -161,18 +161,18 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, anchors_mask, num_cl
             boxes_h = true_boxes[..., 3] - true_boxes[..., 2]                   # Tính toán h
             boxes_wh =  np.stack([boxes_w, boxes_h], axis=-1)
 
-        true_boxes[..., 0:2] = boxes_xy / input_shape[::-1]
-        true_boxes[..., 2:4] = boxes_wh / input_shape[::-1]
+        true_boxes[..., 0:2] = boxes_xy / input_shape[:-1][::-1]
+        true_boxes[..., 2:4] = boxes_wh / input_shape[:-1][::-1]
         
     anchors         = np.expand_dims(anchors, axis=0)
     anchor_maxes    = anchors / 2.
     anchor_mins     = -anchor_maxes
-
     valid_mask = boxes_wh[..., 0] > 0
 
     for b in range(batch):
         wh = boxes_wh[b, valid_mask[b]]
-        if len(wh) == 0: continue
+        if len(wh) == 0: 
+            continue
 
         wh          = np.expand_dims(wh, -2)
         box_maxes   = wh / 2.
@@ -184,7 +184,6 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, anchors_mask, num_cl
 
         box_area    = wh[..., 0] * wh[..., 1]
         anchor_area = anchors[..., 0] * anchors[..., 1]
-
         iou = intersect_area / (box_area + anchor_area - intersect_area)
 
         best_anchor = np.argmax(iou, axis=-1)
@@ -193,16 +192,12 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, anchors_mask, num_cl
 
             for l in range(num_layers):
                 if n in anchors_mask[l]:
-
                     i = np.floor(true_boxes[b, t, 0] * grid_shapes[l][1]).astype('int32')
                     j = np.floor(true_boxes[b, t, 1] * grid_shapes[l][0]).astype('int32')
-
                     k = anchors_mask[l].index(n)
-
                     c = true_boxes[b, t, 4].astype('int32')
 
                     y_true[l][b, j, i, k, 0:4] = true_boxes[b, t, 0:4]
                     y_true[l][b, j, i, k, 4] = 1
                     y_true[l][b, j, i, k, 5 + c] = 1
-
     return y_true
