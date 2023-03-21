@@ -85,7 +85,7 @@ def detect_image(image, model, target_shape, class_names, crop=False, count=Fals
             classes_nums[i] = num
         print("classes_nums:", classes_nums)
 
-
+    results = []
     for i, c in list(enumerate(out_classes)):
         predicted_class = class_names[int(c)]
         box             = out_boxes[i]
@@ -96,7 +96,8 @@ def detect_image(image, model, target_shape, class_names, crop=False, count=Fals
         y_min = max(0, np.floor(y_min).astype('int32'))
         x_max = min(original_shape[1], np.floor(x_max).astype('int32'))
         y_max = min(original_shape[0], np.floor(y_max).astype('int32'))
-
+        results.append([x_min, y_min, x_max, y_max, c.numpy()])
+        
         label = '{} {:.2f}'.format(predicted_class, score)
         if verbose:
             print(label, x_min, y_min, x_max, y_max)
@@ -112,4 +113,4 @@ def detect_image(image, model, target_shape, class_names, crop=False, count=Fals
     
     if save_result:
         cv2.imwrite('./saved_weights/result.jpg', image)
-    return image
+    return image, results
