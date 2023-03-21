@@ -25,12 +25,19 @@ class Flip:
             bboxes[:, [0,2]] = w - bboxes[:, [2,0]]
             if self.coords == "centroids":
                 bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
-                bboxes[:, [0,2]] = bboxes[:, [0,2]] * iw
-                bboxes[:, [1,3]] = bboxes[:, [1,3]] * ih
+                bboxes[:, [0,2]] = bboxes[:, [0,2]] / iw
+                bboxes[:, [1,3]] = bboxes[:, [1,3]] / ih
         elif self.mode.lower() in vertical_list:
             image = cv2.flip(image, 0)
+            if self.coords == "centroids":
+                bboxes[:, [0,2]] = bboxes[:, [0,2]] * w
+                bboxes[:, [1,3]] = bboxes[:, [1,3]] * h
+                bboxes = coordinates_converter(bboxes, conversion="centroids2corners")
             bboxes[:, [3,1]] = h - bboxes[:, [3,1]]
-
+            if self.coords == "centroids":
+                bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
+                bboxes[:, [0,2]] = bboxes[:, [0,2]] / iw
+                bboxes[:, [1,3]] = bboxes[:, [1,3]] / ih
         return image, bboxes
 
 
