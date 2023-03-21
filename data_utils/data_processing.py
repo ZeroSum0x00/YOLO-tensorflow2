@@ -147,7 +147,7 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, anchors_mask, num_cl
 #     true_boxes[..., 0:2] = boxes_xy / input_shape[:-1]
 #     true_boxes[..., 2:4] = boxes_wh / input_shape[:-1]
     if coords == 'centroids':
-        boxes_wh   = true_boxes[..., 2:4]
+        boxes_wh   = true_boxes[..., 2:4] * input_shape[:-1][::-1]
     else:
         if coords == "corners":
             boxes_xy = (true_boxes[..., 0:2] + true_boxes[..., 2:4]) // 2       # Tính toán x_center, y_center
