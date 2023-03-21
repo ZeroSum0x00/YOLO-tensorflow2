@@ -70,23 +70,25 @@ DATA_DESTINATION_PATH           = None
 
 DATA_COLOR_SPACE                = 'RGB'
 
+DATA_COORDINATE                 = "corners"
+
 DATA_AUGMENTATION               = {
                                       'train': {
                                           'main': [
-                                              ResizePadded(target_size=YOLO_TARGET_SIZE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=True),
-                                              RandomFlip(mode='horizontal'),
+                                              ResizePadded(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=True),
+                                              RandomFlip(coords=DATA_COORDINATE, mode='horizontal'),
                                               LightIntensityChange(hue=.1, sat=0.7, val=0.4, color_space=DATA_COLOR_SPACE),
                                           ],
                                           'auxiliary': None,
                                           'merge': None
                                       },
                                       'valid': {
-                                          'main': [ResizePadded(target_size=YOLO_TARGET_SIZE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=False)],
+                                          'main': [ResizePadded(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=False)],
                                           'auxiliary': None,
                                           'merge': None
                                       },
                                       'test': {
-                                          'main': [ResizePadded(target_size=YOLO_TARGET_SIZE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=False)],
+                                          'main': [ResizePadded(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=False)],
                                           'auxiliary': None,
                                           'merge': None
                                       }
@@ -95,18 +97,16 @@ DATA_AUGMENTATION               = {
 DATA_ENDEMIC_AUGMENTATION       = {
                                       'train': {
                                           'main': [
-                                              Mosaic(target_size=YOLO_TARGET_SIZE, max_bboxes=YOLO_MAX_BBOXES),
-                                              RandomFlip(mode='horizontal'),
+                                              Mosaic(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_bboxes=YOLO_MAX_BBOXES),
+                                              RandomFlip(coords=DATA_COORDINATE, mode='horizontal'),
                                               LightIntensityChange(hue=.1, sat=0.7, val=0.4, color_space=DATA_COLOR_SPACE),
                                           ],
-                                          'auxiliary': [ResizePadded(target_size=YOLO_TARGET_SIZE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=True)],
-                                          'merge': [Mixup(target_size=YOLO_TARGET_SIZE, max_bboxes=YOLO_MAX_BBOXES)]
+                                          'auxiliary': [ResizePadded(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=True)],
+                                          'merge': [Mixup(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_bboxes=YOLO_MAX_BBOXES)]
                                       },
                                       'valid': None,
                                       'test':  None
 }
-
-DATA_COORDS_TYPE                = "corners"
 
 DATA_ENDEMIC_AUGMENTATION_PROBA = 0.5
 
