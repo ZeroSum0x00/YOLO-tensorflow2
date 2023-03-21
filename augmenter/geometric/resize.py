@@ -33,8 +33,8 @@ class Resize:
             bboxes[:, 0:2][bboxes[:, 0:2] < 0] = 0
             if self.coords == "centroids":
                 bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
-                bboxes[:, [0,2]] = bboxes[:, [0,2]] * iw
-                bboxes[:, [1,3]] = bboxes[:, [1,3]] * ih
+                bboxes[:, [0,2]] = bboxes[:, [0,2]] / iw
+                bboxes[:, [1,3]] = bboxes[:, [1,3]] / ih
                 
             if len(bboxes) > self.max_bboxes: 
                 bboxes = bboxes[:self.max_bboxes]
@@ -81,8 +81,8 @@ class ResizePadded:
                 bboxes  = bboxes[np.logical_and(box_w > 1, box_h > 1)]
                 if self.coords == "centroids":                    
                     bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
-                    bboxes[:, [0,2]] = bboxes[:, [0,2]] * iw
-                    bboxes[:, [1,3]] = bboxes[:, [1,3]] * ih
+                    bboxes[:, [0,2]] = bboxes[:, [0,2]] / iw
+                    bboxes[:, [1,3]] = bboxes[:, [1,3]] / ih
                 if len(bboxes) > self.max_boxes: 
                     bboxes = bboxes[:self.max_boxes]
                 box_data[:len(bboxes)] = bboxes
@@ -154,8 +154,8 @@ class ResizePadded:
             bboxes = bboxes[np.logical_and(box_w > 1, box_h > 1)]
             if self.coords == "centroids":                
                 bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
-                bboxes[:, [0,2]] = bboxes[:, [0,2]] * iw
-                bboxes[:, [1,3]] = bboxes[:, [1,3]] * ih
+                bboxes[:, [0,2]] = bboxes[:, [0,2]] / iw
+                bboxes[:, [1,3]] = bboxes[:, [1,3]] / ih
             if len(bboxes) > self.max_boxes: 
                 bboxes = bboxes[:self.max_boxes]
 
