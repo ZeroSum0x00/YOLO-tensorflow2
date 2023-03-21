@@ -30,6 +30,7 @@ def get_train_test_data(data_zipfile            = cfg.DATA_PATH,
                         endemic_augmentor       = cfg.DATA_ENDEMIC_AUGMENTATION,
                         endemic_augmentor_proba = cfg.DATA_ENDEMIC_AUGMENTATION_PROBA,
                         endemic_augmentor_ratio = cfg.DATA_ENDEMIC_AUGMENTATION_RATIO,
+                        coordinate              = cfg.DATA_COORDINATE,
                         normalizer              = cfg.DATA_NORMALIZER,
                         data_type               = cfg.DATA_TYPE,
                         check_data              = cfg.CHECK_DATA, 
@@ -63,6 +64,7 @@ def get_train_test_data(data_zipfile            = cfg.DATA_PATH,
                                           endemic_augmentor_ratio = endemic_augmentor_ratio,
                                           init_epoch              = init_epoch,
                                           end_epoch               = end_epoch,
+                                          coordinate              = coordinate,
                                           normalizer              = normalizer,
                                           *args, **kwargs)
 
@@ -90,6 +92,7 @@ def get_train_test_data(data_zipfile            = cfg.DATA_PATH,
                                           endemic_augmentor_ratio = endemic_augmentor_ratio,
                                           init_epoch              = init_epoch,
                                           end_epoch               = end_epoch,
+                                          coordinate              = coordinate,
                                           normalizer              = normalizer,
                                           *args, **kwargs)
     
@@ -128,6 +131,7 @@ class Train_Data_Sequence(Sequence):
                  yolo_anchors_mask       = cfg.YOLO_ANCHORS_MASK,
                  max_bboxes              = cfg.YOLO_MAX_BBOXES,
                  color_space             = cfg.DATA_COLOR_SPACE,
+                 coordinate              = cfg.DATA_COORDINATE,
                  normalizer              = cfg.DATA_NORMALIZER,
                  augmentor               = cfg.DATA_AUGMENTATION['train'],
                  endemic_augmentor       = cfg.DATA_ENDEMIC_AUGMENTATION['train'],
@@ -161,6 +165,7 @@ class Train_Data_Sequence(Sequence):
         self.N = self.n = len(self.dataset)
         self.normalizer = Normalizer(max_bboxes=max_bboxes, mode=normalizer)
 
+        self.coordinate = coordinate
         self.yolo_strides = np.array(yolo_strides)
         self.num_classes = len(classes)
         self.anchors = np.array(yolo_anchors)
@@ -230,7 +235,7 @@ class Train_Data_Sequence(Sequence):
         
         batch_image = np.array(batch_image)
         batch_label = np.array(batch_label)
-        batch_label = preprocess_true_boxes(batch_label, self.target_size, self.anchors, self.yolo_anchors_mask, self.num_classes, self.yolo_strides)
+        batch_label = preprocess_true_boxes(batch_label, self.target_size, self.anchors, self.yolo_anchors_mask, self.num_classes, self.yolo_strides, self.coordinate)
         return batch_image, batch_label
     
     def on_epoch_end(self):
@@ -249,6 +254,7 @@ class Valid_Data_Sequence(Sequence):
                  yolo_anchors_mask       = cfg.YOLO_ANCHORS_MASK,
                  max_bboxes              = cfg.YOLO_MAX_BBOXES,
                  color_space             = cfg.DATA_COLOR_SPACE,
+                 coordinate              = cfg.DATA_COORDINATE,
                  normalizer              = cfg.DATA_NORMALIZER,
                  augmentor               = cfg.DATA_AUGMENTATION['valid'],
                  endemic_augmentor       = cfg.DATA_ENDEMIC_AUGMENTATION['valid'],
@@ -280,6 +286,7 @@ class Valid_Data_Sequence(Sequence):
         self.N = self.n = len(self.dataset)
         self.normalizer = Normalizer(max_bboxes=max_bboxes, mode=normalizer)
 
+        self.coordinate = coordinate
         self.yolo_strides = np.array(yolo_strides)
         self.num_classes = len(classes)
         self.anchors = np.array(yolo_anchors)
@@ -349,7 +356,7 @@ class Valid_Data_Sequence(Sequence):
         
         batch_image = np.array(batch_image)
         batch_label = np.array(batch_label)
-        batch_label = preprocess_true_boxes(batch_label, self.target_size, self.anchors, self.yolo_anchors_mask, self.num_classes, self.yolo_strides)
+        batch_label = preprocess_true_boxes(batch_label, self.target_size, self.anchors, self.yolo_anchors_mask, self.num_classes, self.yolo_strides, self.coordinate)
         return batch_image, batch_label
     
     def on_epoch_end(self):
@@ -367,6 +374,7 @@ class Test_Data_Sequence(Sequence):
                  yolo_anchors_mask       = cfg.YOLO_ANCHORS_MASK,
                  max_bboxes              = cfg.YOLO_MAX_BBOXES,
                  color_space             = cfg.DATA_COLOR_SPACE,
+                 coordinate              = cfg.DATA_COORDINATE,
                  normalizer              = cfg.DATA_NORMALIZER,
                  augmentor               = cfg.DATA_AUGMENTATION['test'],
                  endemic_augmentor       = cfg.DATA_ENDEMIC_AUGMENTATION['test'],
@@ -398,6 +406,7 @@ class Test_Data_Sequence(Sequence):
         self.N = self.n = len(self.dataset)
         self.normalizer = Normalizer(max_bboxes=max_bboxes, mode=normalizer)
 
+        self.coordinate = coordinate
         self.yolo_strides = np.array(yolo_strides)
         self.num_classes = len(classes)
         self.anchors = np.array(yolo_anchors)
@@ -467,7 +476,7 @@ class Test_Data_Sequence(Sequence):
         
         batch_image = np.array(batch_image)
         batch_label = np.array(batch_label)
-        batch_label = preprocess_true_boxes(batch_label, self.target_size, self.anchors, self.yolo_anchors_mask, self.num_classes, self.yolo_strides)
+        batch_label = preprocess_true_boxes(batch_label, self.target_size, self.anchors, self.yolo_anchors_mask, self.num_classes, self.yolo_strides, self.coordinate)
         return batch_image, batch_label
     
     def on_epoch_end(self):
