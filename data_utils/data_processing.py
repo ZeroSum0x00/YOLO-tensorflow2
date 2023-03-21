@@ -132,7 +132,7 @@ class Normalizer():
             return self._basic(input, *args, **kargs)
 
             
-def preprocess_true_boxes(true_boxes, input_shape, anchors, anchors_mask, num_classes, strides):
+def preprocess_true_boxes(true_boxes, input_shape, anchors, anchors_mask, num_classes, strides, coords="corners"):
     true_boxes  = np.array(true_boxes, dtype='float32')
     input_shape = np.array(input_shape, dtype='int32')
 
@@ -142,12 +142,28 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, anchors_mask, num_cl
     grid_shapes = [input_shape[:-1] // np.array(strides[i]) for i in range(len(strides))]
     y_true = [np.zeros((batch, grid_shapes[i][0], grid_shapes[i][1], len(anchors_mask[i]), 5 + num_classes), dtype='float32') for i in range(num_layers)]
 
-    boxes_xy = (true_boxes[..., 0:2] + true_boxes[..., 2:4]) // 2
-    boxes_wh =  true_boxes[..., 2:4] - true_boxes[..., 0:2]
+#     boxes_xy = (true_boxes[..., 0:2] + true_boxes[..., 2:4]) // 2
+#     boxes_wh =  true_boxes[..., 2:4] - true_boxes[..., 0:2]
+#     true_boxes[..., 0:2] = boxes_xy / input_shape[:-1]
+#     true_boxes[..., 2:4] = boxes_wh / input_shape[:-1]
+    if coords == 'centroids':
+        boxes_wh   = true_boxes[..., 2:4]
+    else:
+        if coords == "corners":
+            boxes_xy = (true_boxes[..., 0:2] + true_boxes[..., 2:4]) // 2       # Tính toán x_center, y_center
+            boxes_wh =  true_boxes[..., 2:4] - true_boxes[..., 0:2]             # Tính toán w, h
+        elif coords == "minmax":
+            boxes_x = (true_boxes[..., 0] + true_boxes[..., 1]) // 2            # Tính toán x_center
+            boxes_y = (true_boxes[..., 2] + true_boxes[..., 3]) // 2            # Tính toán y_center
+            boxes_xy = np.stack([boxes_x, boxes_y], axis=-1)
 
-    true_boxes[..., 0:2] = boxes_xy / input_shape[:-1]
-    true_boxes[..., 2:4] = boxes_wh / input_shape[:-1]
+            boxes_w = true_boxes[..., 1] - true_boxes[..., 0]                   # Tính toán w
+            boxes_h = true_boxes[..., 3] - true_boxes[..., 2]                   # Tính toán h
+            boxes_wh =  np.stack([boxes_w, boxes_h], axis=-1)
 
+        true_boxes[..., 0:2] = boxes_xy / input_shape[::-1]
+        true_boxes[..., 2:4] = boxes_wh / input_shape[::-1]
+        
     anchors         = np.expand_dims(anchors, axis=0)
     anchor_maxes    = anchors / 2.
     anchor_mins     = -anchor_maxes
