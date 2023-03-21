@@ -4,7 +4,7 @@ import xml
 import numpy as np
 
 from utils.files import extract_zip, verify_folder, get_files
-from data_utils.parse_voc import ParseVOC
+from data_utils import ParseVOC, ParseCOCO, ParseYOLO, ParseTXT
 from configs import general_config as cfg
 
 
@@ -47,7 +47,14 @@ def get_data(data_dir       = cfg.DATA_PATH,
         annotation_file = verify_folder(annotation_dir) + f'instances_{phase}.json'
         parser = ParseCOCO(data_dir, annotation_file, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser()
-
+    elif data_type.lower() == "yolo":
+        txt_files = sorted(get_files(data_dir, extensions='txt'))
+        parser = ParseYOLO(data_dir, annotation_dir, classes, load_memory, check_data=check_data, *args, **kwargs)
+        data_extraction = parser(txt_files)
+    elif data_type.lower() == "txt" or data_type.lower() == "text":
+        annotation_file = verify_folder(annotation_dir) + f'instances_{phase}.txt'
+        parser = ParseTXT(data_dir, annotation_file, load_memory, check_data=check_data, *args, **kwargs)
+        data_extraction = parser()
     dict_data = {
         'data_path': verify_folder(data_dir),
         'data_extractor': data_extraction
