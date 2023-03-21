@@ -5,8 +5,9 @@ from visualizer.visual_image import visual_image_with_bboxes
 
 
 class Mixup:
-    def __init__(self, target_size=(416, 416, 3), max_bboxes=500):
+    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=500):
         self.target_size = target_size
+        self.coords      = coords
         self.max_bboxes  = max_bboxes
 
     def __call__(self, images, bboxes):
@@ -18,8 +19,12 @@ class Mixup:
             if h != self.target_size[0] or w != self.target_size[1]:
                 image = cv2.resize(image, self.target_size[:-1])
             new_image += np.array(image, np.float32) / n_sample
-
-            box_wh    = bbox[:, 2:4] - bbox[:, 0:2]
+            
+            if self.coords == "corners":
+                box_wh    = bbox[:, 2:4] - bbox[:, 0:2]
+            elif self.coords == "centroids":
+                box_wh    = bbox[:, 2:4]
+                
             box_valid = box_wh[:, 0] > 0
             bboxes_list.append(bbox[box_valid, :])
 
