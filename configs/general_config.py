@@ -106,6 +106,8 @@ DATA_ENDEMIC_AUGMENTATION       = {
                                       'test':  None
 }
 
+DATA_COORDS_TYPE                = "corners"
+
 DATA_ENDEMIC_AUGMENTATION_PROBA = 0.5
 
 DATA_ENDEMIC_AUGMENTATION_RATIO = 0.7
