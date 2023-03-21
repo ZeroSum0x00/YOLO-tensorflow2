@@ -2,13 +2,14 @@ import cv2
 import random
 import numpy as np
 
-from utils.auxiliary_processing import random_range
+from utils.auxiliary_processing import random_range, coordinates_converter
 from visualizer.visual_image import visual_image, visual_image_with_bboxes
 
 
 class Flip:
-    def __init__(self, mode='horizontal', max_bboxes=100):
-        self.mode = mode
+    def __init__(self, coords="corners", mode='horizontal', max_bboxes=100):
+        self.coords     = coords
+        self.mode       = mode
         self.max_bboxes = max_bboxes
 
     def __call__(self, image, bboxes):
@@ -17,14 +18,22 @@ class Flip:
         vertical_list   = ['vertical', 'v']
         if self.mode.lower() in horizontal_list:
             image = cv2.flip(image, 1)
+            if self.coords == "centroids":
+                bboxes[:, [0,2]] = bboxes[:, [0,2]] * w
+                bboxes[:, [1,3]] = bboxes[:, [1,3]] * h
+                bboxes = coordinates_converter(bboxes, conversion="centroids2corners")
             bboxes[:, [0,2]] = w - bboxes[:, [2,0]]
+            if self.coords == "centroids":
+                bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
+                bboxes[:, [0,2]] = bboxes[:, [0,2]] * iw
+                bboxes[:, [1,3]] = bboxes[:, [1,3]] * ih
         elif self.mode.lower() in vertical_list:
             image = cv2.flip(image, 0)
             bboxes[:, [3,1]] = h - bboxes[:, [3,1]]
 
         return image, bboxes
-      
-      
+
+
 class RandomFlip:
     def __init__(self, prob=0.5, mode='horizontal', max_bboxes=100):
         self.prob       = prob
@@ -38,7 +47,7 @@ class RandomFlip:
             image, bboxes = self.aug(image, bboxes)
         return image, bboxes
       
-      
+
 if __name__ == "__main__":
     image_path = "/content/sample_data/voc_tiny/train/000288.jpg"
     image      = cv2.imread(image_path)
