@@ -6,8 +6,7 @@ import tensorflow as tf
 from models.architectures.darknet53 import DarkNet53
 from models.yolov3 import YOLOv3
 from models.yolo import YOLO
-from utils.post_processing import get_labels
-from utils.post_processing import detect_image
+from utils.post_processing import get_labels, detect_image
 from configs import general_config as cfg
 
 
@@ -31,15 +30,15 @@ if __name__ == "__main__":
         
     model = YOLO(architecture, image_size=cfg.YOLO_TARGET_SIZE)
 
-    load_type                          = "weights"
+    load_type      = "weights"
 
-    weight_objects                    = [        
-                                        {
-                                            'path': './saved_weights/best_weights/best_weights_mAP',
-                                            'stage': 'full',
-                                            'custom_objects': None
-                                        }
-                                    ]
+    weight_objects = [        
+                         {
+                             'path': './saved_weights/best_weights/best_weights_mAP',
+                             'stage': 'full',
+                             'custom_objects': None
+                         }
+                     ]
 
     if load_type and weight_objects:
         if load_type == "weights":
