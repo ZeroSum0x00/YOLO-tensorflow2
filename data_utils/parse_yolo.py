@@ -46,7 +46,7 @@ class ParseYOLO:
             
             image_name = txt_file.replace('txt', 'jpg')
             info_dict['filename'] = image_name
-            height, width = imagesize.get(os.path.join(self.data_dir, image_name))
+            width, height = imagesize.get(os.path.join(self.data_dir, image_name))
             info_dict['image_size'] = (height, width)
             
             if self.load_memory:
@@ -57,17 +57,12 @@ class ParseYOLO:
                 for data in raw_data:
                     bbox = [0, 0, 0, 0, 0]
                     label, x_center, y_center, box_width, box_height = data.strip().split(' ')
-                    label, x_center, y_center, box_width, box_height = int(label), float(x_center), float(y_center), float(box_width), float(box_height)
-                    x_center   = x_center * width
-                    y_center   = y_center * height
-                    box_width  = box_width * width
-                    box_height = box_height *height
-                    bbox[0]    = int(x_center - 0.5 * box_width)
-                    bbox[1]    = int(y_center - 0.5 * box_height)
-                    bbox[2]    = int(x_center + 0.5 * box_width)
-                    bbox[3]    = int(y_center + 0.5 * box_height)
-                    bbox[4]    = label
-                    
+                    bbox[0]    = float(x_center)
+                    bbox[1]    = float(y_center)
+                    bbox[2]    = float(box_width)
+                    bbox[3]    = float(box_height)
+                    bbox[4]    = int(label)
+
                     if bbox != [0, 0, 0, 0, 0]:
                         info_dict['bboxes'].append(bbox)
             if len(info_dict['bboxes']) > 0:
