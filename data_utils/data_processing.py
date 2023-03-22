@@ -150,8 +150,8 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, anchors_mask, num_cl
     y_true = [np.zeros((batch, grid_shapes[i][0], grid_shapes[i][1], len(anchors_mask[i]), 5 + num_classes), dtype='float32') for i in range(num_layers)]
 
     if coords == 'centroids':
-        boxes_xy   = true_boxes[..., 0:2]
-        boxes_wh   = true_boxes[..., 2:4]
+        boxes_xy   = true_boxes[..., 0:2].copy()
+        boxes_wh   = true_boxes[..., 2:4].copy()
     else:
         if coords == "corners":
             boxes_xy = (true_boxes[..., 0:2] + true_boxes[..., 2:4]) // 2       # Tính toán x_center, y_center
