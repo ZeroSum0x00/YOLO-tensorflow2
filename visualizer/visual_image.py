@@ -36,7 +36,7 @@ def draw_boxes_on_image(image, boxes):
     return image
 
 
-def visual_image_with_bboxes(images, bboxes=None, titles=None, rows=1, columns=2, size=(10, 10)):
+def visual_image_with_bboxes(images, bboxes=None, titles=None, rows=1, columns=2, size=(10, 10), mode=None):
     images_copied = np.copy(images)
     bboxes_copied = np.copy(bboxes)
     figure = plt.figure(figsize=size)
@@ -50,9 +50,12 @@ def visual_image_with_bboxes(images, bboxes=None, titles=None, rows=1, columns=2
         plt.title(title)
         if bbox is not None:
             img = draw_boxes_on_image(img, bbox)
-        try:
-            plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        except:
+        if mode and mode.lower() == 'bgr2rgb':
+            try:
+                plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            except:
+                plt.imshow(img)
+        else:
             plt.imshow(img)
 
     plt.show()
