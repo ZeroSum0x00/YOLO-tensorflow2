@@ -19,34 +19,27 @@ class Flip:
         if self.mode.lower() in horizontal_list:
             image = cv2.flip(image, 1)
             if self.coords == "centroids":
-                bboxes[:, [0,2]] = bboxes[:, [0,2]] * w
-                bboxes[:, [1,3]] = bboxes[:, [1,3]] * h
                 bboxes = coordinates_converter(bboxes, conversion="centroids2corners")
             bboxes[:, [0,2]] = w - bboxes[:, [2,0]]
             if self.coords == "centroids":
                 bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
-                bboxes[:, [0,2]] = bboxes[:, [0,2]] / iw
-                bboxes[:, [1,3]] = bboxes[:, [1,3]] / ih
+                
         elif self.mode.lower() in vertical_list:
             image = cv2.flip(image, 0)
             if self.coords == "centroids":
-                bboxes[:, [0,2]] = bboxes[:, [0,2]] * w
-                bboxes[:, [1,3]] = bboxes[:, [1,3]] * h
                 bboxes = coordinates_converter(bboxes, conversion="centroids2corners")
             bboxes[:, [3,1]] = h - bboxes[:, [3,1]]
             if self.coords == "centroids":
                 bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
-                bboxes[:, [0,2]] = bboxes[:, [0,2]] / iw
-                bboxes[:, [1,3]] = bboxes[:, [1,3]] / ih
+                
         return image, bboxes
 
 
 class RandomFlip:
-    def __init__(self, prob=0.5, mode='horizontal', max_bboxes=100):
+    def __init__(self, prob=0.5, coords="corners", mode='horizontal', max_bboxes=100):
         self.prob       = prob
-        self.mode       = mode
         self.max_bboxes = max_bboxes
-        self.aug        = Flip(mode=self.mode)
+        self.aug        = Flip(coords=coords, mode=mode)
         
     def __call__(self, image, bboxes):
         p = np.random.uniform(0,1)
