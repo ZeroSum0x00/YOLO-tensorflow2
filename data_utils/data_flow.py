@@ -144,17 +144,21 @@ class Train_Data_Sequence(Sequence):
         self.dataset = dataset['data_extractor']
         
         if isinstance(augmentor, dict):
+            self.use_augment_auxiliary = augmentor["auxiliary"]
             self.augmentor = Augmentor(augment_objects=augmentor, 
                                        target_size=target_size, 
                                        max_bboxes=max_bboxes)
         else:
+            self.use_augment_auxiliary = None
             self.augmentor = augmentor
 
         if isinstance(endemic_augmentor, dict):
+            self.use_endemic_auxiliary = endemic_augmentor["auxiliary"]
             self.endemic_augmentor = EndemicAugmentor(augment_objects=endemic_augmentor, 
                                                       target_size=target_size, 
                                                       max_bboxes=max_bboxes)
         else:
+            self.use_endemic_auxiliary = None
             self.endemic_augmentor = endemic_augmentor
 
         self.target_size = target_size
@@ -205,7 +209,7 @@ class Train_Data_Sequence(Sequence):
                     images.append(image)
                     bboxes.append(box)
 
-                if random_range() < self.endemic_augmentor_proba:
+                if self.use_endemic_auxiliary and random_range() < self.endemic_augmentor_proba:
                     auxiliary_sample = random.sample(self.dataset, 1)[0]
                     auxiliary_image, auxiliary_bboxes = self.get_samples(auxiliary_sample)
                     images, bboxes  = self.endemic_augmentor(images, bboxes, auxiliary_image, auxiliary_bboxes)
@@ -218,7 +222,7 @@ class Train_Data_Sequence(Sequence):
                 images = change_color_space(images, 'bgr', self.color_space)
                 bboxes = np.array(sample['bboxes'])
 
-            if self.augmentor and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
+            if self.use_augment_auxiliary and self.augmentor and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
                 auxiliary_sample = random.sample(self.dataset, 1)[0]
                 auxiliary_image, auxiliary_bboxes = self.get_samples(auxiliary_sample)
                 images, bboxes  = self.augmentor(images, bboxes, auxiliary_image, auxiliary_bboxes)
@@ -267,17 +271,21 @@ class Valid_Data_Sequence(Sequence):
         self.dataset = dataset['data_extractor']
         
         if isinstance(augmentor, dict):
+            self.use_augment_auxiliary = augmentor["auxiliary"]
             self.augmentor = Augmentor(augment_objects=augmentor, 
                                        target_size=target_size, 
                                        max_bboxes=max_bboxes)
         else:
+            self.use_augment_auxiliary = None
             self.augmentor = augmentor
 
         if isinstance(endemic_augmentor, dict):
+            self.use_endemic_auxiliary = endemic_augmentor["auxiliary"]
             self.endemic_augmentor = EndemicAugmentor(augment_objects=endemic_augmentor, 
                                                       target_size=target_size, 
                                                       max_bboxes=max_bboxes)
         else:
+            self.use_endemic_auxiliary = None
             self.endemic_augmentor = endemic_augmentor
 
         self.target_size = target_size
@@ -326,7 +334,7 @@ class Valid_Data_Sequence(Sequence):
                     images.append(image)
                     bboxes.append(box)
 
-                if random_range() < self.endemic_augmentor_proba:
+                if self.use_endemic_auxiliary and random_range() < self.endemic_augmentor_proba:
                     auxiliary_sample = random.sample(self.dataset, 1)[0]
                     auxiliary_image, auxiliary_bboxes = self.get_samples(auxiliary_sample)
                     images, bboxes  = self.endemic_augmentor(images, bboxes, auxiliary_image, auxiliary_bboxes)
@@ -339,7 +347,7 @@ class Valid_Data_Sequence(Sequence):
                 images = change_color_space(images, 'bgr', self.color_space)
                 bboxes = np.array(sample['bboxes'])
 
-            if self.augmentor and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
+            if self.use_augment_auxiliary and self.augmentor and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
                 auxiliary_sample = random.sample(self.dataset, 1)[0]
                 auxiliary_image, auxiliary_bboxes = self.get_samples(auxiliary_sample)
                 images, bboxes  = self.augmentor(images, bboxes, auxiliary_image, auxiliary_bboxes)
@@ -387,17 +395,21 @@ class Test_Data_Sequence(Sequence):
         self.dataset = dataset['data_extractor']
         
         if isinstance(augmentor, dict):
+            self.use_augment_auxiliary = augmentor["auxiliary"]
             self.augmentor = Augmentor(augment_objects=augmentor, 
                                        target_size=target_size, 
                                        max_bboxes=max_bboxes)
         else:
+            self.use_augment_auxiliary = None
             self.augmentor = augmentor
 
         if isinstance(endemic_augmentor, dict):
+            self.use_endemic_auxiliary = endemic_augmentor["auxiliary"]
             self.endemic_augmentor = EndemicAugmentor(augment_objects=endemic_augmentor, 
                                                       target_size=target_size, 
                                                       max_bboxes=max_bboxes)
         else:
+            self.use_endemic_auxiliary = None
             self.endemic_augmentor = endemic_augmentor
 
         self.target_size = target_size
@@ -446,7 +458,7 @@ class Test_Data_Sequence(Sequence):
                     images.append(image)
                     bboxes.append(box)
 
-                if random_range() < self.endemic_augmentor_proba:
+                if self.use_endemic_auxiliary and random_range() < self.endemic_augmentor_proba:
                     auxiliary_sample = random.sample(self.dataset, 1)[0]
                     auxiliary_image, auxiliary_bboxes = self.get_samples(auxiliary_sample)
                     images, bboxes  = self.endemic_augmentor(images, bboxes, auxiliary_image, auxiliary_bboxes)
@@ -459,7 +471,7 @@ class Test_Data_Sequence(Sequence):
                 images = change_color_space(images, 'bgr', self.color_space)
                 bboxes = np.array(sample['bboxes'])
 
-            if self.augmentor and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
+            if self.use_augment_auxiliary and self.augmentor and random_range() < self.endemic_augmentor_proba and self.current_epoch < self.end_epoch * self.endemic_augmentor_ratio:
                 auxiliary_sample = random.sample(self.dataset, 1)[0]
                 auxiliary_image, auxiliary_bboxes = self.get_samples(auxiliary_sample)
                 images, bboxes  = self.augmentor(images, bboxes, auxiliary_image, auxiliary_bboxes)
