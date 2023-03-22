@@ -57,10 +57,10 @@ class ParseYOLO:
                 for data in raw_data:
                     bbox = [0, 0, 0, 0, 0]
                     label, x_center, y_center, box_width, box_height = data.strip().split(' ')
-                    bbox[0]    = float(x_center)
-                    bbox[1]    = float(y_center)
-                    bbox[2]    = float(box_width)
-                    bbox[3]    = float(box_height)
+                    bbox[0]    = float(x_center) * width
+                    bbox[1]    = float(y_center) * height
+                    bbox[2]    = float(box_width) * width
+                    bbox[3]    = float(box_height) * height
                     bbox[4]    = int(label)
 
                     if bbox != [0, 0, 0, 0, 0]:
