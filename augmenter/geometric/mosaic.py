@@ -2,16 +2,18 @@ import cv2
 import random
 import numpy as np
 
-from utils.auxiliary_processing import random_range
+from utils.auxiliary_processing import random_range, coordinates_converter
 from visualizer.visual_image import visual_image_with_bboxes
 
 
 class Mosaic:
-    def __init__(self, target_size=(416, 416, 3), max_bboxes=500, jitter=0.3):
-        self.target_size = target_size
-        self.max_bboxes  = max_bboxes
-        self.jitter      = jitter
-
+    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=500, jitter=0.3, padding_color=None):
+        self.target_size   = target_size
+        self.coords        = coords
+        self.max_bboxes    = max_bboxes
+        self.jitter        = jitter
+        self.padding_color = padding_color
+        
     @classmethod
     def merge_bboxes(cls, bboxes, cutx, cuty):
         merge_bbox = []
@@ -67,12 +69,13 @@ class Mosaic:
         image_datas = [] 
         box_datas   = []
         index       = 0
-        fill_color  = [random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)]
+        fill_color  = self.padding_color if self.padding_color else [random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)]
 
         for image, box in zip(images, bboxes):
+            if self.coords == "centroids":
+                box = coordinates_converter(box, conversion="centroids2corners")
+                
             h, w, _ = image.shape
-            # visual_image_with_bboxes([np.array(image, np.float32)/255.0], [box], ['origin image'], size=(20, 20))
-
             flip = random_range() < .5
             if flip and len(box) > 0: 
                 image = cv2.flip(image, 1)
@@ -170,11 +173,15 @@ class Mosaic:
 
         new_image = np.array(new_image, np.uint8)
         new_boxes = self.merge_bboxes(box_datas, cutx, cuty)
-
+        if self.coords == "centroids":
+            new_boxes = coordinates_converter(np.array(new_boxes), "corners2centroids")
+            
         box_data = np.zeros((self.max_bboxes, 5))
         if len(new_boxes)>0:
-            if len(new_boxes) > self.max_bboxes: new_boxes = new_boxes[:self.max_bboxes]
+            if len(new_boxes) > self.max_bboxes: 
+                new_boxes = new_boxes[:self.max_bboxes]
             box_data[:len(new_boxes)] = new_boxes
+
         return new_image, box_data
     
     
