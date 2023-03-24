@@ -120,6 +120,9 @@ def train(data_path                   = cfg.DATA_PATH,
 
         model = YOLO(architecture, image_size=input_shape)
 
+        model.summary()
+        model.plot_model(TRAINING_TIME_PATH)
+
         if weight_type and weight_objects:
             if weight_type == "weights":
                 model.load_weights(weight_objects)
