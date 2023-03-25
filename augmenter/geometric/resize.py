@@ -40,10 +40,10 @@ class Resize:
       
 
 class ResizePadded:
-    def __init__(self, target_size=(416, 416, 3), coords="corners", max_boxes=10, jitter=.3, flexible=False):
+    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=10, jitter=.3, flexible=False):
         self.target_size = target_size
         self.coords      = coords
-        self.max_boxes   = max_boxes
+        self.max_bboxes  = max_bboxes
         self.jitter      = jitter
         self.flexible    = flexible
 
@@ -59,7 +59,7 @@ class ResizePadded:
             image_paded = np.full(shape=[ih, iw, 3], fill_value=128.0, dtype=image.dtype)
             image_paded[dh:nh+dh, dw:nw+dw, :] = image_resized
 
-            box_data = np.zeros((self.max_boxes, 5))
+            box_data = np.zeros((self.max_bboxes, 5))
             if len(bboxes) > 0:
                 np.random.shuffle(bboxes)
                 if self.coords == "centroids":
@@ -76,8 +76,8 @@ class ResizePadded:
                 if self.coords == "centroids":                    
                     bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
                     
-                if len(bboxes) > self.max_boxes: 
-                    bboxes = bboxes[:self.max_boxes]
+                if len(bboxes) > self.max_bboxes: 
+                    bboxes = bboxes[:self.max_bboxes]
                 box_data[:len(bboxes)] = bboxes
             return image_paded, box_data
 
@@ -130,7 +130,7 @@ class ResizePadded:
         image = image_paded
         image_data      = np.array(image, np.uint8)
 
-        box_data = np.zeros((self.max_boxes, 5))
+        box_data = np.zeros((self.max_bboxes, 5))
         if len(bboxes) > 0:
             np.random.shuffle(bboxes)
             if self.coords == "centroids":                
@@ -147,8 +147,8 @@ class ResizePadded:
             if self.coords == "centroids":                
                 bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
                 
-            if len(bboxes) > self.max_boxes: 
-                bboxes = bboxes[:self.max_boxes]
+            if len(bboxes) > self.max_bboxes: 
+                bboxes = bboxes[:self.max_bboxes]
 
             box_data[:len(bboxes)] = bboxes
         return image_data, box_data
