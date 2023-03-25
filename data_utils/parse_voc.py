@@ -1,6 +1,7 @@
 import os
 import cv2
 import xml.etree.ElementTree as ET
+from tqdm import tqdm
 from configs import general_config as cfg
 
 
@@ -23,7 +24,7 @@ class ParseVOC:
         
     def __call__(self, xml_files):
         data_extraction = []
-        for xml_file in xml_files:
+        for data in tqdm(self.annotation_data, desc="Load dataset"):
             xml_path = os.path.join(self.annotation_dir, xml_file)
             
             if self.check_data:
