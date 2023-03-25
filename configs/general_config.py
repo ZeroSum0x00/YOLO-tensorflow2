@@ -75,7 +75,7 @@ DATA_COORDINATE                 = "corners"
 DATA_AUGMENTATION               = {
                                       'train': {
                                           'main': [
-                                              ResizePadded(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=True),
+                                              ResizePadded(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_bboxes=YOLO_MAX_BBOXES, jitter=.3, flexible=True),
                                               RandomFlip(coords=DATA_COORDINATE, mode='horizontal'),
                                               LightIntensityChange(hue=.1, sat=0.7, val=0.4, color_space=DATA_COLOR_SPACE),
                                           ],
@@ -83,12 +83,12 @@ DATA_AUGMENTATION               = {
                                           'merge': None
                                       },
                                       'valid': {
-                                          'main': [ResizePadded(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=False)],
+                                          'main': [ResizePadded(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_bboxes=YOLO_MAX_BBOXES, jitter=.3, flexible=False)],
                                           'auxiliary': None,
                                           'merge': None
                                       },
                                       'test': {
-                                          'main': [ResizePadded(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=False)],
+                                          'main': [ResizePadded(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_bboxes=YOLO_MAX_BBOXES, jitter=.3, flexible=False)],
                                           'auxiliary': None,
                                           'merge': None
                                       }
@@ -101,7 +101,7 @@ DATA_ENDEMIC_AUGMENTATION       = {
                                               RandomFlip(coords=DATA_COORDINATE, mode='horizontal'),
                                               LightIntensityChange(hue=.1, sat=0.7, val=0.4, color_space=DATA_COLOR_SPACE),
                                           ],
-                                          'auxiliary': [ResizePadded(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_boxes=YOLO_MAX_BBOXES, jitter=.3, flexible=True)],
+                                          'auxiliary': [ResizePadded(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_bboxes=YOLO_MAX_BBOXES, jitter=.3, flexible=True)],
                                           'merge': [Mixup(target_size=YOLO_TARGET_SIZE, coords=DATA_COORDINATE, max_bboxes=YOLO_MAX_BBOXES)]
                                       },
                                       'valid': None,
