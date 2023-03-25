@@ -198,6 +198,11 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, anchors_mask, num_cl
                 if n in anchors_mask[l]:
                     i = np.floor(true_boxes[b, t, 0] * grid_shapes[l][1]).astype('int32')
                     j = np.floor(true_boxes[b, t, 1] * grid_shapes[l][0]).astype('int32')
+                    if coords == 'centroids':
+                        if i == grid_shapes[l][1]:
+                            i -= 1
+                        elif j == grid_shapes[l][0]:
+                            j -= 1
                     k = anchors_mask[l].index(n)
                     c = true_boxes[b, t, 4].astype('int32')
 
