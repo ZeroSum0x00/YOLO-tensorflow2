@@ -12,7 +12,8 @@ class LightIntensityChange:
     def __call__(self, image, bboxes):
         image         = np.array(image, np.uint8)
         if self.color_space.lower() == "bgr":
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
         elif self.color_space.lower() == "rgb":
             image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
         r             = np.random.uniform(-1, 1, 3) * [self.hue, self.sat, self.val] + 1
@@ -24,7 +25,8 @@ class LightIntensityChange:
         lut_val = np.clip(x * r[2], 0, 255).astype(dtype)
         image   = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val)))
         if self.color_space.lower() == "bgr":
-            image = cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
+            image = cv2.cvtColor(image, cv2.COLOR_HSV2RGB)
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         elif self.color_space.lower() == "rgb":
             image = cv2.cvtColor(image, cv2.COLOR_HSV2RGB)
         return image, bboxes
