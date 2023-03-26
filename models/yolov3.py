@@ -95,8 +95,8 @@ class ConvolutionBlock(tf.keras.layers.Layer):
     
 class FPNLayer(tf.keras.layers.Layer):
     def __init__(self, 
-                 activation      = 's', 
-                 norm_layer      = 's', 
+                 activation      = 'leaky', 
+                 norm_layer      = 'bn', 
                  name            = "FPNLayer", 
                  **kwargs):
         super(FPNLayer, self).__init__(name=name, **kwargs)
