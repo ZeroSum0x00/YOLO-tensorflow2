@@ -7,7 +7,7 @@ from visualizer.visual_image import visual_image, visual_image_with_bboxes
 
 
 class Resize:
-    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=500, interpolation=None):
+    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=100, interpolation=None):
         self.target_size   = target_size
         self.coords        = coords
         self.max_bboxes    = max_bboxes
@@ -40,7 +40,7 @@ class Resize:
       
 
 class ResizePadded:
-    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=10, jitter=.3, flexible=False):
+    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=100, jitter=.3, flexible=False):
         self.target_size = target_size
         self.coords      = coords
         self.max_bboxes  = max_bboxes
