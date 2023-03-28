@@ -7,7 +7,7 @@ from visualizer.visual_image import visual_image_with_bboxes
 
 
 class Mosaic:
-    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=500, jitter=0.3, padding_color=None):
+    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=100, jitter=0.3, padding_color=None):
         self.target_size   = target_size
         self.coords        = coords
         self.max_bboxes    = max_bboxes
