@@ -112,12 +112,13 @@ class Data_Sequence(Sequence):
         
         self.data_path = dataset['data_path']
         self.dataset   = dataset['data_extractor']
-        self.dataset   = shuffle(self.dataset)
+        if phase == "train":
+            self.dataset   = shuffle(self.dataset)
         self.phase     = phase
         
         if isinstance(augmentor[phase], dict):
             self.use_augment_auxiliary = augmentor[phase]["auxiliary"]
-            self.augmentor = Augmentor(augment_objects=augmentor[self.phase], 
+            self.augmentor = Augmentor(augment_objects=augmentor[phase], 
                                        target_size=target_size, 
                                        max_bboxes=max_bboxes)
         else:
@@ -217,3 +218,8 @@ class Data_Sequence(Sequence):
             return batch_image, batch_label, debug_boxes
         else:
             return batch_image, batch_label
+
+    def on_epoch_end(self):
+        self.current_epoch += 1
+        if self.phase:
+            self.dataset = shuffle(self.dataset)
