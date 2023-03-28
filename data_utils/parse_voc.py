@@ -24,7 +24,7 @@ class ParseVOC:
         
     def __call__(self, xml_files):
         data_extraction = []
-        for data in tqdm(xml_files, desc="Load dataset"):
+        for xml_file in tqdm(xml_files, desc="Load dataset"):
             xml_path = os.path.join(self.annotation_dir, xml_file)
             
             if self.check_data:
