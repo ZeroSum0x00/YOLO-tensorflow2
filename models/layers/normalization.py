@@ -1,17 +1,31 @@
 import tensorflow as tf
-from tensorflow.keras.layers import BatchNormalization
+import tensorflow_addons as tfa
+from tensorflow.keras import backend as K
 
 
-class FrozenBatchNormalization(BatchNormalization):
-    # "Frozen state" and "inference mode" are two separate concepts.
-    # `layer.trainable = False` is to freeze the layer, so the layer will use
-    # stored moving `var` and `mean` in the "inference mode", and both `gama`
-    # and `beta` will not be updated !
-    def __init__(self, **kwargs):
-        super(FrozenBatchNormalization, self).__init__(**kwargs)
-
-    def call(self, x, training=False):
-        if not training:
-            training = tf.constant(False)
-        training = tf.logical_and(training, self.trainable)
-        return super().call(x, training)
+def get_normalizer_from_name(norm_name, *args, **kwargs):
+    norm_name = norm_name.lower()
+    if norm_name in ['bn', 'batch', 'batchnorm', 'batch-norm', 'batch norm', 'batch-normalization', 'batch normalization']:
+        from tensorflow.keras.layers import BatchNormalization
+        return BatchNormalization(*args, **kwargs)
+    elif norm_name in ['grn', 'group', 'groupnorm', 'group-norm', 'group norm', 'group-normalization', 'group normalization']:
+        from tensorflow.keras.layers import GroupNormalization
+        return GroupNormalization(*args, **kwargs)
+    elif norm_name in ['ln', 'layer', 'layernorm', 'layer-norm', 'layer norm', 'layer-normalization', 'layer normalization']:
+        from tensorflow.keras.layers import LayerNormalization
+        return LayerNormalization(*args, **kwargs)
+    elif norm_name in ['in', 'instance', 'instancenorm', 'instance-norm', 'instance norm', 'instance-normalization', 'instance normalization']:
+        from tensorflow.keras.layers import InstanceNormalization
+        return InstanceNormalization(*args, **kwargs)
+    elif norm_name in ['sn', 'spectralnorm', 'spectral-norm', 'spectral norm', 'spectral-normalization', 'spectral normalization']:
+        from tensorflow.keras.layers import SpectralNormalization
+        return SpectralNormalization(*args, **kwargs)
+    elif norm_name in ['un', 'unitnorm', 'unit-norm', 'unit norm', 'unit-normalization', 'unit normalization']:
+        from tensorflow.keras.layers import UnitNormalization
+        return UnitNormalization(*args, **kwargs)
+    elif norm_name in ['frn', 'filterresponsenorm', 'filter-response-norm', 'filter response norm', 'filter-response-normalization', 'filter response normalization']:
+        from tfa.layers import FilterResponseNormalization
+        return FilterResponseNormalization(*args, **kwargs)
+    elif norm_name in ['evn', 'evo', 'evonorm', 'evo-norm', 'evo-normalization', 'evo normalization']:
+        from models.layers import EvoNormalization
+        return EvoNormalization(*args, **kwargs)
