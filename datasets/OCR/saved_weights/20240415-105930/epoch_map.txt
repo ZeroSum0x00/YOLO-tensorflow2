@@ -1,0 +1,1 @@
+mAP score in epoch 10: 0.0
