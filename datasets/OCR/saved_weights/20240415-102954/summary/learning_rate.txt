@@ -1,3 +1,0 @@
-Learning rate in epoch 1: 1.25e-05
-Learning rate in epoch 2: 2.4999999999999998e-05
-Learning rate in epoch 3: 6.25e-05

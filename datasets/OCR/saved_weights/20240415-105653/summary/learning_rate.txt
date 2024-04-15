@@ -1,4 +1,0 @@
-Learning rate in epoch 1: 0.000125
-Learning rate in epoch 2: 0.00025
-Learning rate in epoch 3: 0.000625
-Learning rate in epoch 4: 0.0012500000000000002
