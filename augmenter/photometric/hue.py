@@ -21,11 +21,12 @@ class RandomHue:
         if not (0 <= max_delta <= 180): raise ValueError("`max_delta` must be in the closed interval `[0, 180]`.")
         self.max_delta = max_delta
         self.prob = prob
-        self.aug = Hue(delta=0)
 
     def __call__(self, image, bboxes):
         p = np.random.uniform(0,1)
+        
         if p >= (1.0-self.prob):
-            self.aug.delta = np.random.randint(-self.max_delta, self.max_delta)
+            delta = np.random.randint(-self.max_delta, self.max_delta)
+            self.aug = Hue(delta=delta)
             image, bboxes = self.aug(image, bboxes)
         return image, bboxes

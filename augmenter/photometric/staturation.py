@@ -21,12 +21,13 @@ class RandomSaturation:
         if lower >= upper: raise ValueError("`upper` must be greater than `lower`.")
         self.lower = lower
         self.upper = upper
-        self.prob = prob
-        self.aug = Saturation(factor=1.0)
+        self.prob  = prob
         
     def __call__(self, image, bboxes):
         p = np.random.uniform(0,1)
-        if p >= (1.0-self.prob):
-            self.aug.factor = np.random.uniform(self.lower, self.upper)
+        
+        if p >= (1.0 - self.prob):
+            factor = np.random.uniform(self.lower, self.upper)
+            self.aug = Saturation(factor=factor)
             image, labels = self.aug(image, bboxes)
         return image, bboxes

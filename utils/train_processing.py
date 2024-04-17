@@ -15,20 +15,28 @@ def losses_prepare(loss_object):
     
 def train_prepare(train_mode):
     try:
-        logger.info(f"Setting trainer width {train_mode.lower()} mode")
-        if train_mode.lower() == 'eager':
-            os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-            tf.get_logger().setLevel(logging.ERROR)
-            tf.config.run_functions_eagerly(True)
-            return True
-        elif train_mode.lower() == 'graph':
-            os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-            tf.get_logger().setLevel(logging.ERROR)
-            tf.config.run_functions_eagerly(False)
+        if train_mode == 'cpu':
+            tf.config.set_visible_devices([], 'GPU')
             return True
         else:
-            logger.error(f"Can't find {train_mode} mode. You only choose 'eager' or 'graph'")
-            return False
+            gpus = tf.config.experimental.list_physical_devices('GPU')
+            for gpu in gpus:
+              tf.config.experimental.set_memory_growth(gpu, True)
+                
+            logger.info(f"Setting trainer width {train_mode.lower()} mode")
+            if train_mode.lower() == 'eager':
+                os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+                tf.get_logger().setLevel(logging.ERROR)
+                tf.config.run_functions_eagerly(True)
+                return True
+            elif train_mode.lower() == 'graph':
+                os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+                tf.get_logger().setLevel(logging.ERROR)
+                tf.config.run_functions_eagerly(False)
+                return True
+            else:
+                logger.error(f"Can't find {train_mode} mode. You only choose 'eager' or 'graph'")
+                return False
     except BaseException as e:
         print(e)
         return False

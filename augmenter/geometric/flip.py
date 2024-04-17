@@ -36,13 +36,15 @@ class Flip:
 
 
 class RandomFlip:
-    def __init__(self, prob=0.5, coords="corners", mode='horizontal', max_bboxes=100):
-        self.prob       = prob
+    def __init__(self, coords="corners", mode='horizontal', max_bboxes=100, prob=0.5):
+        self.coords     = coords
+        self.mode       = mode
         self.max_bboxes = max_bboxes
-        self.aug        = Flip(coords=coords, mode=mode)
+        self.prob       = prob
         
     def __call__(self, image, bboxes):
-        p = np.random.uniform(0,1)
+        self.aug = Flip(coords=self.coords, mode=self.mode)
+        p        = np.random.uniform(0,1)
         if p >= (1.0-self.prob):
             image, bboxes = self.aug(image, bboxes)
         return image, bboxes

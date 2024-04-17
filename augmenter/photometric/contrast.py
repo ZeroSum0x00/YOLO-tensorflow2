@@ -22,11 +22,12 @@ class RandomContrast:
         self.lower = lower
         self.upper = upper
         self.prob = prob
-        self.aug = Contrast(factor=1.0)
         
     def __call__(self, image, bboxes):
         p = np.random.uniform(0,1)
+        
         if p >= (1.0-self.prob):
-            self.aug.factor = np.random.uniform(self.lower, self.upper)
+            factor = np.random.uniform(self.lower, self.upper)
+            self.aug = Contrast(factor=factor)
             image, labels = self.aug(image, bboxes)
         return image, bboxes

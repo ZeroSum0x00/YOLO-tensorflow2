@@ -1,5 +1,5 @@
 Dataset:
-    data_dir: "/home/vbpo-101386/Desktop/TuNIT/Datasets/Object Detection/VOC_tiny/"
+    data_dir: "/home/vbpo-101386/Desktop/TuNIT/Datasets/Object Detection/VOCTotal/"
     annotation_dir: null
     data_info:
         data_type: 'voc'
@@ -20,15 +20,34 @@ Dataset:
     data_augmentation:
         train:
             main:
-                - ResizePadded:
-                    jitter: 0.3
-                    flexible: True
+                - RandomGaussianBlur:
+                    sigma_range: [0.4, 0.8]
+                - RandomBrightness:
+                    delta_range: 150
+                - RandomContrast:
+                    lower: 0.5
+                    upper: 1.5
+                - RandomErodeDilate:
+                    kernel_size: [3, 3]
                 - RandomFlip:
                     mode: 'horizontal'
-                - LightIntensityChange:
-                    hue: 0.1
-                    sat: 0.7
-                    val: 0.4
+                - RandomLightIntensity:
+                    hue_range: 0.1
+                    sat_range: 0.3
+                    val_range: 0.2
+                - RandomSaltAndPepper:
+                    ratio_range: 0.3
+                    phi_range: 0.1
+                - RandomSharpen:
+                    lightness_range: [0.75, 2.0]
+                    alpha_range: 0.1
+                - RandomSaturation:
+                    lower: 0.3
+                    upper: 2.0
+                - ResizePadded:
+                    jitter: 0.1
+                    padding_color: [128, 128, 128]
+                    flexible: True
             auxiliary:
             merge:
         valid:
@@ -37,22 +56,27 @@ Dataset:
         train:
             main:
                 - Mosaic:
+                    min_offset: [0.3, 0.7]
+                    jitter: 0.1
+                    padding_color: [128, 128, 128]
                 - RandomFlip:
                     mode: 'horizontal'
                 - LightIntensityChange:
                     hue: 0.1
-                    sat: 0.7
-                    val: 0.4
+                    sat: 0.3
+                    val: 0.2
             auxiliary:
                 - ResizePadded:
-                    jitter: 0.3
+                    jitter: 0.1
+                    padding_color: [128, 128, 128]
                     flexible: True
             merge:
                 - Mixup:
+                    main_object_ratio: 0.6
         valid:
         test:
     data_loader_mode: 0
-    data_endemic_augmention_proba: 0.5
+    data_endemic_augmention_proba: 0.25
     data_endemic_augmention_ratio: 0.7
     
 Model:
@@ -85,9 +109,9 @@ Model:
         
 Train:
     mode: 'graph'
-    save_weight_path: &save_weight './datasets/OCR/saved_weights/'
+    save_weight_path: &save_weight './saved_weights/'
     save_weight_type: &save_type 'tf'
-    batch_size: 8
+    batch_size: 16
     epoch:
         start: 0
         end: &end_epoch 300
@@ -137,17 +161,17 @@ Callbacks:
         save_freq: 'epoch'
         period: 100
         verbose: 1
-    # - TensorBoard:
-    #     extend_path: 'logs'
-    #     update_freq: 1
+    - TensorBoard:
+        extend_path: 'logs'
+        update_freq: 1
     - CSVLogger:
         extend_path: 'summary/train_history.csv'
         separator: ","
         append: True
-    # - TrainLogger:
-    #     extend_path: 'logs/training_log.log'
-    # - TrainSummary:
-    #     extend_path: 'summary/train_summary.txt'
+    - TrainLogger:
+        extend_path: 'logs/training_log.log'
+    - TrainSummary:
+        extend_path: 'summary/train_summary.txt'
 
 Test:
     data: '/home/vbpo-101386/Desktop/TuNIT/Datasets/Text Recognition/IIIT5K/test'

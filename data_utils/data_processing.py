@@ -1,6 +1,6 @@
 import os
 import cv2
-import xml
+import types
 import numpy as np
 
 from utils.files import extract_zip, verify_folder, get_files
@@ -62,25 +62,26 @@ def get_data(data_dir,
 
 
 class Normalizer():
-    def __init__(self, max_bboxes=100, mode='divide'):
-        self.mode = mode
+    def __init__(self, norm_type='divide', mean=None, std=None, max_bboxes=100):
+        self.norm_type  = norm_type
+        self.mean       = mean
+        self.std        = std
         self.max_bboxes = max_bboxes
 
-    @classmethod
-    def __get_standard_deviation(cls, img, mean=None, std=None):
-        if mean is not None:
+    def __get_standard_deviation(self, img):
+        if self.mean is not None:
             for i in range(img.shape[-1]):
-                if isinstance(mean, float) or isinstance(mean, int):
-                    img[..., i] -= mean
+                if isinstance(self.mean, float) or isinstance(self.mean, int):
+                    img[..., i] -= self.mean
                 else:
-                    img[..., i] -= mean[i]
+                    img[..., i] -= self.mean[i]
 
-                if std is not None:
-                    for i in range(img.shape[-1]):
-                        if isinstance(std, float) or isinstance(std, int):
-                            img[..., i] /= (std + 1e-20)
-                        else:
-                            img[..., i] /= (std[i] + 1e-20)
+        if self.std is not None:
+            for i in range(img.shape[-1]):
+                if isinstance(self.std, float) or isinstance(self.std, int):
+                    img[..., i] /= (self.std + 1e-20)
+                else:
+                    img[..., i] /= (self.std[i] + 1e-20)
         return img
 
     @classmethod
@@ -89,6 +90,8 @@ class Normalizer():
         image_resized = cv2.resize(image, (target_size[1], target_size[0]), interpolation=interpolation)
 
         box_data = np.zeros((max_bboxes, 5))
+        box_data[:, -1] = -1
+        
         if len(bboxes) > 0:
             for index, box in enumerate(bboxes):
                 box[0] *= (target_size[1] / w)
@@ -100,40 +103,62 @@ class Normalizer():
             box_data[:len(bboxes)] = bboxes
         return image_resized, box_data
 
-    def _sub_divide(self, image, bboxes=None, mean=None, std=None, target_size=None, interpolation=None):
-        if target_size and image.shape[0] != target_size[0] and image.shape[1] != target_size[1]:
+    @classmethod
+    def __remove_jam_box(cls, bboxes, target_size):
+        for idx in range(len(bboxes)):
+            xmin, ymin, xmax, ymax, cls = bboxes[idx]
+            if cls == -1:
+                bboxes[idx] = [0, 0, 0, 0, -1]
+            elif (xmax - xmin < target_size[1] * 0.025) or (ymax - ymin < target_size[0] * 0.025):
+                bboxes[idx] = [0, 0, 0, 0, -1]
+        return bboxes
+        
+    def _sub_divide(self, image, bboxes=None, target_size=None, interpolation=None):
+        if target_size and (image.shape[0] != target_size[0] or image.shape[1] != target_size[1]):
             image, bboxes = self.__resize_basic_mode(image, bboxes, target_size, self.max_bboxes, interpolation)
+
+        if len(image.shape) == 2:
+            image = np.expand_dims(image, axis=-1)
         image = image.astype(np.float32)
         image = image / 127.5 - 1
-        if mean or std:
-            image = self.__get_standard_deviation(image, mean, std)
+        image = self.__get_standard_deviation(image)
         image = np.clip(image, -1, 1)
+        bboxes = self.__remove_jam_box(bboxes, target_size)
         return image, bboxes
 
-    def _divide(self, image, bboxes=None, mean=None, std=None, target_size=None, interpolation=None):
-        if target_size and image.shape[0] != target_size[0] and image.shape[1] != target_size[1]:
+    def _divide(self, image, bboxes=None, target_size=None, interpolation=None):
+        if target_size and (image.shape[0] != target_size[0] or image.shape[1] != target_size[1]):
             image, bboxes = self.__resize_basic_mode(image, bboxes, target_size, self.max_bboxes, interpolation)
+
+        if len(image.shape) == 2:
+            image = np.expand_dims(image, axis=-1)
         image = image.astype(np.float32)
         image = image / 255.0
-        if mean or std:
-            image = self.__get_standard_deviation(image, mean, std)
+        image = self.__get_standard_deviation(image)
         image = np.clip(image, 0, 1)
+        bboxes = self.__remove_jam_box(bboxes, target_size)
         return image, bboxes
 
-    def _basic(self, image, bboxes=None, mean=None, std=None, target_size=None, interpolation=None):
-        if target_size and image.shape[0] != target_size[0] and image.shape[1] != target_size[1]:
+    def _basic(self, image, bboxes=None, target_size=None, interpolation=None):
+        if target_size and (image.shape[0] != target_size[0] or image.shape[1] != target_size[1]):
             image, bboxes = self.__resize_basic_mode(image, bboxes, target_size, self.max_bboxes, interpolation)
+
+        if len(image.shape) == 2:
+            image = np.expand_dims(image, axis=-1)
         image = image.astype(np.uint8)
-        if mean or std:
-            image = self.__get_standard_deviation(image, mean, std)
+        image = self.__get_standard_deviation(image)
         image = np.clip(image, 0, 255)
+        bboxes = self.__remove_jam_box(bboxes, target_size)
         return image, bboxes
 
     def __call__(self, input, *args, **kargs):
-        if self.mode == "divide":
-            return self._divide(input, *args, **kargs)
-        elif self.mode == "sub_divide":
-            return self._sub_divide(input, *args, **kargs)
+        if isinstance(self.norm_type, str):
+            if self.norm_type == "divide":
+                return self._divide(input, *args, **kargs)
+            elif self.norm_type == "sub_divide":
+                return self._sub_divide(input, *args, **kargs)
+        elif isinstance(self.norm_type, types.FunctionType):
+            return self._func_calc(input, self.norm_type, *args, **kargs)
         else:
             return self._basic(input, *args, **kargs)
 
@@ -204,8 +229,8 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, anchors_mask, num_cl
                     #         j -= 1
                     k = anchors_mask[l].index(n)
                     c = true_boxes[b, t, 4].astype('int32')
-                    
-                    if i < grid_shapes[l][1] and j < grid_shapes[l][0]:
+
+                    if c != -1 and i < grid_shapes[l][1] and j < grid_shapes[l][0]:
                         y_true[l][b, j, i, k, 0:4] = true_boxes[b, t, 0:4]
                         y_true[l][b, j, i, k, 4] = 1
                         y_true[l][b, j, i, k, 5 + c] = 1

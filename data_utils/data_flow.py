@@ -1,18 +1,18 @@
 import cv2
-import math
+import random
 import numpy as np
 import tensorflow as tf
-import random
-from tensorflow.keras.utils import Sequence
 from sklearn.utils import shuffle
 
 from augmenter import build_augmenter
-from data_utils.data_processing import extract_data_folder, get_data, Normalizer, preprocess_true_boxes
+from data_utils.data_processing import get_data, Normalizer, preprocess_true_boxes
 from data_utils.data_augmentation import Augmentor, EndemicAugmentor
 from utils.post_processing import get_labels
 from utils.auxiliary_processing import random_range, change_color_space
 from utils.constant import *
 from utils.logger import logger
+
+
 
 def get_train_test_data(data_dirs, 
                         annotation_dir          = None,
@@ -25,20 +25,29 @@ def get_train_test_data(data_dirs,
                         max_bboxes              = 100,
                         init_epoch              = 0,
                         end_epoch               = 300,
-                        color_space             = 'rgb',
+                        color_space             = 'RGB',
                         augmentor               = None,
                         endemic_augmentor       = None,
                         endemic_augmentor_proba = 0.5,
                         endemic_augmentor_ratio = 0.5,
                         coordinate              = 'corners',
                         normalizer              = 'divide',
+                        mean_norm               = None,
+                        std_norm                = None,
                         data_type               = 'voc',
                         check_data              = False, 
                         load_memory             = False,
                         exclude_difficult       = True,
                         exclude_truncated       = False,
+                        dataloader_mode         = 0,
                         *args, **kwargs):
-
+                            
+    """
+        dataloader_mode = 0:   train - validation - test
+        dataloader_mode = 1:   train - validation
+        dataloader_mode = 2:   train
+    """
+                            
     if isinstance(classes, str):
         classes, _ = get_labels(classes)
 
@@ -51,66 +60,126 @@ def get_train_test_data(data_dirs,
                           load_memory       = load_memory,
                           exclude_difficult = exclude_difficult,
                           exclude_truncated = exclude_truncated)
+                            
     train_generator = Data_Sequence(data_train, 
-                                   target_size             = target_size, 
-                                   batch_size              = batch_size, 
-                                   yolo_strides            = yolo_strides,
-                                   classes                 = classes,
-                                   yolo_anchors            = yolo_anchors,
-                                   yolo_anchors_mask       = yolo_anchors_mask,
-                                   max_bboxes              = max_bboxes,
-                                   color_space             = color_space,
-                                   augmentor               = augmentor,
-                                   endemic_augmentor       = endemic_augmentor,
-                                   endemic_augmentor_proba = endemic_augmentor_proba,
-                                   endemic_augmentor_ratio = endemic_augmentor_ratio,
-                                   init_epoch              = init_epoch,
-                                   end_epoch               = end_epoch,
-                                   coordinate              = coordinate,
-                                   normalizer              = normalizer,
-                                   phase                   = "train",
-                                   *args, **kwargs)
+                                    target_size             = target_size, 
+                                    batch_size              = batch_size, 
+                                    yolo_strides            = yolo_strides,
+                                    classes                 = classes,
+                                    yolo_anchors            = yolo_anchors,
+                                    yolo_anchors_mask       = yolo_anchors_mask,
+                                    max_bboxes              = max_bboxes,
+                                    color_space             = color_space,
+                                    coordinate              = coordinate,
+                                    normalizer              = normalizer,
+                                    mean_norm               = mean_norm,
+                                    std_norm                = std_norm,
+                                    augmentor               = augmentor,
+                                    endemic_augmentor       = endemic_augmentor,
+                                    endemic_augmentor_proba = endemic_augmentor_proba,
+                                    endemic_augmentor_ratio = endemic_augmentor_ratio,
+                                    init_epoch              = init_epoch,
+                                    end_epoch               = end_epoch,
+                                    phase                   = "train",
+                                    *args, **kwargs)
+                            
+    if dataloader_mode != 2:
+        data_valid = get_data(data_dirs,
+                              annotation_dir    = annotation_dir,
+                              classes           = classes,
+                              data_type         = data_type,
+                              phase             = 'validation', 
+                              check_data        = check_data,
+                              load_memory       = load_memory,
+                              exclude_difficult = exclude_difficult,
+                              exclude_truncated = exclude_truncated)
+        
+        valid_generator = Data_Sequence(data_valid, 
+                                        target_size             = target_size, 
+                                        batch_size              = batch_size, 
+                                        yolo_strides            = yolo_strides,
+                                        classes                 = classes,
+                                        yolo_anchors            = yolo_anchors,
+                                        yolo_anchors_mask       = yolo_anchors_mask,
+                                        max_bboxes              = max_bboxes,
+                                        color_space             = color_space,
+                                        coordinate              = coordinate,
+                                        normalizer              = normalizer,
+                                        mean_norm               = mean_norm,
+                                        std_norm                = std_norm,
+                                        augmentor               = augmentor,
+                                        endemic_augmentor       = endemic_augmentor,
+                                        endemic_augmentor_proba = endemic_augmentor_proba,
+                                        endemic_augmentor_ratio = endemic_augmentor_ratio,
+                                        init_epoch              = init_epoch,
+                                        end_epoch               = end_epoch,
+                                        phase                   = "valid",
+                                        *args, **kwargs)
+    else:
+        valid_generator = None
 
-    data_valid = get_data(data_dirs,
-                          annotation_dir    = annotation_dir,
-                          classes           = classes,
-                          data_type         = data_type,
-                          phase             = 'validation', 
-                          check_data        = check_data,
-                          load_memory       = load_memory,
-                          exclude_difficult = exclude_difficult,
-                          exclude_truncated = exclude_truncated)
-    valid_generator = Data_Sequence(data_valid, 
-                                  target_size             = target_size, 
-                                  batch_size              = batch_size, 
-                                  yolo_strides            = yolo_strides,
-                                  classes                 = classes,
-                                  yolo_anchors            = yolo_anchors,
-                                  yolo_anchors_mask       = yolo_anchors_mask,
-                                  max_bboxes              = max_bboxes,
-                                  color_space             = color_space,
-                                  augmentor               = augmentor,
-                                  endemic_augmentor       = endemic_augmentor,
-                                  endemic_augmentor_proba = endemic_augmentor_proba,
-                                  endemic_augmentor_ratio = endemic_augmentor_ratio,
-                                  init_epoch              = init_epoch,
-                                  end_epoch               = end_epoch,
-                                  coordinate              = coordinate,
-                                  normalizer              = normalizer,
-                                  phase                   = "valid",
-                                  *args, **kwargs)
-
+    if dataloader_mode == 1:
+        data_test  = get_data(data_dirs,
+                              annotation_dir    = annotation_dir,
+                              classes           = classes,
+                              data_type         = data_type,
+                              phase             = 'test', 
+                              check_data        = check_data,
+                              load_memory       = load_memory,
+                              exclude_difficult = exclude_difficult,
+                              exclude_truncated = exclude_truncated)
+        
+        test_generator  = Data_Sequence(data_valid, 
+                                        target_size             = target_size, 
+                                        batch_size              = batch_size, 
+                                        yolo_strides            = yolo_strides,
+                                        classes                 = classes,
+                                        yolo_anchors            = yolo_anchors,
+                                        yolo_anchors_mask       = yolo_anchors_mask,
+                                        max_bboxes              = max_bboxes,
+                                        color_space             = color_space,
+                                        coordinate              = coordinate,
+                                        normalizer              = normalizer,
+                                        mean_norm               = mean_norm,
+                                        std_norm                = std_norm,
+                                        augmentor               = augmentor,
+                                        endemic_augmentor       = endemic_augmentor,
+                                        endemic_augmentor_proba = endemic_augmentor_proba,
+                                        endemic_augmentor_ratio = endemic_augmentor_ratio,
+                                        init_epoch              = init_epoch,
+                                        end_epoch               = end_epoch,
+                                        phase                   = "test",
+                                        *args, **kwargs)
+    else:
+        test_generator = None
+        
     logger.info('Load data successfully')
-    return train_generator, valid_generator
+    return train_generator, valid_generator, test_generator
 
 
-class Data_Sequence(Sequence):
-    def __init__(self, dataset, target_size, batch_size, yolo_strides,
-                 classes, yolo_anchors, yolo_anchors_mask, max_bboxes,
-                 color_space, coordinate, normalizer, augmentor,
-                 endemic_augmentor, endemic_augmentor_proba,
-                 endemic_augmentor_ratio, init_epoch, end_epoch,
-                 phase, debug_mode=False):
+class Data_Sequence(tf.keras.utils.Sequence):
+    def __init__(self, 
+                 dataset,
+                 target_size,
+                 batch_size,
+                 yolo_strides,
+                 classes,
+                 yolo_anchors,
+                 yolo_anchors_mask,
+                 max_bboxes,
+                 color_space='RGB',
+                 coordinate="corners",
+                 normalizer=None,
+                 mean_norm=None, 
+                 std_norm=None,
+                 augmentor=None,
+                 endemic_augmentor=None, 
+                 endemic_augmentor_proba=0.,
+                 endemic_augmentor_ratio=0.,
+                 init_epoch=0,
+                 end_epoch=100,
+                 phase='train',
+                 debug_mode=False):
         
         self.data_path = dataset['data_path']
         self.dataset   = dataset['data_extractor']
@@ -143,7 +212,10 @@ class Data_Sequence(Sequence):
         self.batch_size = batch_size
 
         self.N = self.n = len(self.dataset)
-        self.normalizer = Normalizer(max_bboxes=max_bboxes, mode=normalizer)
+        self.normalizer = Normalizer(normalizer,
+                                     mean=mean_norm, 
+                                     std=std_norm, 
+                                     max_bboxes=max_bboxes)
 
         self.coordinate = coordinate
         self.yolo_strides = np.array(yolo_strides)
@@ -214,7 +286,7 @@ class Data_Sequence(Sequence):
             
             batch_image.append(images)
             batch_label.append(bboxes)
-        
+
         batch_image = np.array(batch_image)
         batch_label = debug_boxes = np.array(batch_label)
         batch_label = preprocess_true_boxes(batch_label, self.target_size, self.anchors, self.yolo_anchors_mask, self.num_classes, self.yolo_strides, self.coordinate)

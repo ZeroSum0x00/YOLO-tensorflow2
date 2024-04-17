@@ -1,17 +1,18 @@
 import os
-import tensorflow as tf
-from keras.callbacks import Callback
-
 import logging
+import tensorflow as tf
 
 
-class TrainLogger(Callback):
+
+class TrainLogger(tf.keras.callbacks.Callback):
+
     """Logs training metrics to a file.
     
     Args:
         file_path (str): Path to the log file will be saved.
         logLevel (int, optional): Logging level. Defaults to logging.INFO.
     """
+    
     def __init__(self, file_path, logLevel=logging.INFO, console_output=False):
         super().__init__()
         self.file_path = file_path

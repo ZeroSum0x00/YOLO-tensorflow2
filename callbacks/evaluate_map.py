@@ -24,6 +24,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                  minoverlap     = 0.5,
                  mode           = 'voc',
                  color_space    = 'BGR',
+                 min_ratio      = 0.2,
                  saved_best_map = True,
                  show_frequency = 100):
         super(mAPEvaluate, self).__init__()
@@ -34,6 +35,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
         self.minoverlap           = minoverlap
         self.mode                 = mode
         self.color_space          = color_space
+        self.min_ratio            = min_ratio
         self.saved_best_map       = saved_best_map
         self.show_frequency       = show_frequency
         self.map_out_path         = result_path + ".temp_map_out"
@@ -119,16 +121,16 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                     map_result = get_map(self.minoverlap, False, path=self.map_out_path)
     
                 if self.saved_best_map:
-                    if map_result > self.current_map:
+                    if map_result > self.current_map and map_result > self.min_ratio:
                         logger.info(f'mAP score increase {self.current_map*100:.2f}% to {map_result*100:.2f}%')
-                        logger.info(f'Save best mAP weights to {self.result_path}best_weights_mAP')                    
-                        self.model.save_weights(self.result_path + 'best_weights_mAP')
+                        logger.info(f'Save best mAP weights to {os.path.join(self.result_path, "weights")}best_weights_mAP')                    
+                        self.model.save_weights(os.path.join(self.result_path, "weights", 'best_weights_mAP'))
                         self.current_map = map_result
     
                 self.maps.append(map_result)
                 self.epoches.append(temp_epoch)
     
-                with open(os.path.join(self.result_path, "epoch_map.txt"), 'a') as f:
+                with open(os.path.join(self.result_path, 'summary', "epoch_map.txt"), 'a') as f:
                     if epoch == 0:
                         f.write(f"mAP score in epoch 0: 0.0")
                     f.write(f"mAP score in epoch {epoch + 1}: {str(map_result*100)}")
@@ -143,7 +145,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 plt.title('A Map Curve')
                 plt.legend(loc="lower right")
     
-                plt.savefig(os.path.join(self.result_path, "epoch_map.png"))
+                plt.savefig(os.path.join(self.result_path, 'summary', "epoch_map.png"))
                 plt.cla()
                 plt.close("all")
                 shutil.rmtree(self.map_out_path)

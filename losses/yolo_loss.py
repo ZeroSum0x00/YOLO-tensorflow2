@@ -2,10 +2,11 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
 
+from .regression_loss import IOUloss
 from utils.iou import box_iou
-from .regression_loss.iou_loss import IOUloss
 from utils.bboxes import get_anchors_and_decode
 from utils.constant import *
+
 
 class YOLOLoss(tf.keras.losses.Loss):
     def __init__(self, 

@@ -3,30 +3,42 @@ import random
 import numpy as np
 
 from utils.auxiliary_processing import random_range
-from visualizer.visual_image import visual_image
-
 
 
 class Brightness:
-    def __init__(self, delta):
-        self.delta = delta
-
+    def __init__(self, delta=100):
+        self.value = 1 + delta / 255
+        
     def __call__(self, image, bboxes):
-        image = np.clip(image + self.delta, 0, 255)
-        return image, bboxes
+        img = image.copy()
+        img_shape = img.shape
+        if len(img_shape) > 2:
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+            hsv = np.array(img, dtype=np.float32)
+    
+            hsv[:, :, 1] = hsv[:, :, 1] * self.value
+            hsv[:, :, 2] = hsv[:, :, 2] * self.value
+    
+            hsv = np.uint8(np.clip(hsv, 0, 255))
+    
+            img = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+        return img, bboxes
     
 
 class RandomBrightness:
-    def __init__(self, lower=0.3, upper=2.0, prob=0.5):
-        if lower >= upper: raise ValueError("`upper` must be greater than `lower`.")
-        self.lower = float(lower)
-        self.upper = float(upper)
-        self.prob = prob
-        self.aug = Brightness(delta=0)
+    def __init__(self, delta_range=100, prob=0.5):
+        self.delta_range = delta_range
+        self.prob        = prob
 
     def __call__(self, image, bboxes):
-        p = np.random.uniform(0,1)
+        if isinstance(self.delta_range, (list, tuple)):
+            delta = float(np.random.uniform(*self.delta_range))
+        else:
+            delta = float(np.random.uniform(-self.delta_range, self.delta_range))
+            
+        self.aug = Brightness(delta)
+        
+        p = np.random.uniform(0, 1)
         if p >= (1.0-self.prob):
-            self.aug.delta = np.random.uniform(self.lower, self.upper)
             image, bboxes = self.aug(image, bboxes)
         return image, bboxes

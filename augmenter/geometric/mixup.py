@@ -1,35 +1,65 @@
 import cv2
 import numpy as np
 
+from utils.auxiliary_processing import coordinates_converter
 from visualizer.visual_image import visual_image_with_bboxes
 
 
 class Mixup:
-    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=500):
-        self.target_size = target_size
-        self.coords      = coords
-        self.max_bboxes  = max_bboxes
+    def __init__(self, target_size=(416, 416, 3), coords="corners", main_object_ratio=0.5, min_object_ratio=0.1, max_bboxes=500):
+        assert coords in ('corners', 'centroids')
+        self.target_size       = target_size
+        self.coords            = coords
+        self.main_object_ratio = main_object_ratio
+        self.min_object_ratio  = min_object_ratio
+        self.max_bboxes        = max_bboxes
 
     def __call__(self, images, bboxes):
         new_image   = 0.0
         n_sample    = len(images)
         bboxes_list = []
-        for image, bbox in zip(images, bboxes):
+        remaining_object_ratio = (1. - self.main_object_ratio) / (n_sample - 1)
+
+        for idx, (image, bbox) in enumerate(zip(images, bboxes)):
             h, w, _ = image.shape
             if h != self.target_size[0] or w != self.target_size[1]:
                 image = cv2.resize(image, self.target_size[:-1])
-            new_image += np.array(image, np.float32) / n_sample
-            
-            if self.coords == "corners":
-                box_wh    = bbox[:, 2:4] - bbox[:, 0:2]
-            elif self.coords == "centroids":
-                box_wh    = bbox[:, 2:4]
+
+            if idx == 0:
+                current_ratio = self.main_object_ratio
                 
-            box_valid = box_wh[:, 0] > 0
-            bboxes_list.append(bbox[box_valid, :])
+            else:
+                current_ratio = remaining_object_ratio
+
+            new_image += np.array(image, np.float32) * current_ratio
+
+            if current_ratio > self.min_object_ratio:
+                if self.coords == "centroids":
+                    bbox = coordinates_converter(bbox, conversion="centroids2corners")
+                    
+                if len(bbox) > 0:
+                    for index, box in enumerate(bbox):
+                        box[0] *= (self.target_size[1] / w)
+                        box[1] *= (self.target_size[0] / h)
+                        box[2] *= (self.target_size[1] / w)
+                        box[3] *= (self.target_size[0] / h) 
+                        bbox[index] = box
+                        
+                    if len(bbox) > self.max_bboxes: bbox = bbox[:self.max_bboxes]
+                        
+                if self.coords == "centroids":
+                    bbox = coordinates_converter(bbox, conversion="corners2centroids")
+                    box_wh    = bbox[:, 2:4]
+                else:
+                    box_wh    = bbox[:, 2:4] - bbox[:, 0:2]
+
+                box_valid = box_wh[:, 0] > 0
+                bboxes_list.append(bbox[box_valid, :])
 
         new_bboxes = np.concatenate(bboxes_list, axis=0)
         box_data = np.zeros((self.max_bboxes, 5))
+        box_data[:, -1] = -1
+        
         if len(new_bboxes) > 0:
             if len(new_bboxes) > self.max_bboxes: new_bboxes = new_bboxes[:self.max_bboxes]
             box_data[:len(new_bboxes)] = new_bboxes

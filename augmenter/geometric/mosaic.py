@@ -7,10 +7,11 @@ from visualizer.visual_image import visual_image_with_bboxes
 
 
 class Mosaic:
-    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=100, jitter=0.3, padding_color=None):
+    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=100, min_offset=[0.1, 0.9], jitter=0.3, padding_color=None):
         self.target_size   = target_size
         self.coords        = coords
         self.max_bboxes    = max_bboxes
+        self.min_offset    = min_offset
         self.jitter        = jitter
         self.padding_color = padding_color
         
@@ -63,8 +64,8 @@ class Mosaic:
 
     def __call__(self, images, bboxes):
         ih, iw, _    = self.target_size
-        min_offset_x = random_range(0.3, 0.7)
-        min_offset_y = random_range(0.3, 0.7)
+        min_offset_x = random_range(self.min_offset[0], self.min_offset[1])
+        min_offset_y = random_range(self.min_offset[0], self.min_offset[1])
 
         image_datas = [] 
         box_datas   = []
@@ -74,7 +75,7 @@ class Mosaic:
         for image, box in zip(images, bboxes):
             if self.coords == "centroids":
                 box = coordinates_converter(box, conversion="centroids2corners")
-                
+
             h, w, _ = image.shape
             flip = random_range() < .5
             if flip and len(box) > 0: 
@@ -108,6 +109,7 @@ class Mosaic:
             height = max(ih, nh + abs(dh))
             width = max(iw, nw + abs(dw))
             image_paded = np.full(shape=[height, width, 3], fill_value=fill_color)
+
             if dw < 0 and dh >= 0:
                 image_paded[dh:nh+dh, 0:nw, :] = image_resized
                 if width == iw:
@@ -177,6 +179,8 @@ class Mosaic:
             new_boxes = coordinates_converter(np.array(new_boxes), "corners2centroids")
             
         box_data = np.zeros((self.max_bboxes, 5))
+        box_data[:, -1] = -1
+
         if len(new_boxes)>0:
             if len(new_boxes) > self.max_bboxes: 
                 new_boxes = new_boxes[:self.max_bboxes]

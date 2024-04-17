@@ -25,60 +25,54 @@ class YOLO(tf.keras.Model):
                 self.classes = classes
             self.architecture.num_classes = len(self.classes)
 
-        self.total_loss_tracker      = tf.keras.metrics.Mean(name="total_loss")
+        self.total_loss_tracker = tf.keras.metrics.Mean(name="loss")
 
-    def compile(self, optimizer, loss, **kwargs):
+    def compile(self, optimizer, loss, metrics=None, **kwargs):
         super(YOLO, self).compile(**kwargs)
-        self.optimizer = optimizer
-        self.loss_object = loss
-
+        self.optimizer    = optimizer
+        self.loss_object  = loss
+        self.list_metrics = metrics
+        
     @property
     def metrics(self):
-        return [
-            self.total_loss_tracker,
-        ]
+        if self.list_metrics:
+            return [
+                self.total_loss_tracker,
+                *self.list_metrics,
+            ]
+        else:
+            return [self.total_loss_tracker]
 
-    # def train_step(self, data):
-    #     images, targets = data
-    #     targets = [targets[2], targets[1], targets[0]]
-    #     with tf.GradientTape() as tape:
-    #         y_pred      = self.architecture(images, training=True)
-    #         loss_value  = self.yolo_loss(y_true=targets, y_pred=y_pred)
-    #         loss_value  = tf.reduce_sum(self.architecture.losses) + loss_value
-    #     grads = tape.gradient(loss_value, self.architecture.trainable_variables)
-    #     self.optimizer.apply_gradients(zip(grads, self.architecture.trainable_variables))
-
-    #     self.total_loss_tracker.update_state(loss_value)
-    #     results = {m.name: m.result() for m in self.metrics}
-    #     results['learning_rate'] = self.optimizer.lr
-    #     return results
-
-    # def test_step(self, data):
-    #     images, targets = data
-    #     targets = [targets[2], targets[1], targets[0]]
-    #     y_pred      = self.architecture(images, training=False)
-    #     loss_value  = self.yolo_loss(y_true=targets, y_pred=y_pred)
-    #     loss_value  = tf.reduce_sum(self.architecture.losses) + loss_value
-    #     self.total_loss_tracker.update_state(loss_value)
-    #     results = {m.name: m.result() for m in self.metrics}
-    #     return results
     def train_step(self, data):
         images, targets = data
         targets = [targets[2], targets[1], targets[0]]
         with tf.GradientTape() as tape:
             y_pred      = self.architecture(images, training=True)
             loss_value = 0
+            
             for losses in self.loss_object:
                 loss_value  += self.architecture.calc_loss(y_true=targets, 
                                                            y_pred=y_pred, 
                                                            loss_object=losses)
                 
             loss_value  = tf.reduce_sum(self.architecture.losses) + loss_value
+            
         grads = tape.gradient(loss_value, self.architecture.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.architecture.trainable_variables))
-
         self.total_loss_tracker.update_state(loss_value)
-        results = {m.name: m.result() for m in self.metrics}
+        
+        if self.list_metrics:
+            for metric in self.list_metrics:
+                metric.update_state(targets, y_pred)
+
+        results = {}
+        for metric in self.metrics:
+            if isinstance(metric.result(), dict):
+                for k, v in metric.result().items():
+                    results[k] = v
+            else:
+                results[metric.name] = metric.result()
+
         results['learning_rate'] = self.optimizer.lr
         return results
 
@@ -87,6 +81,7 @@ class YOLO(tf.keras.Model):
         targets = [targets[2], targets[1], targets[0]]
         y_pred      = self.architecture(images, training=False)
         loss_value = 0
+        
         for losses in self.loss_object:
             loss_value  += self.architecture.calc_loss(y_true=targets, 
                                                        y_pred=y_pred, 
@@ -94,7 +89,18 @@ class YOLO(tf.keras.Model):
             
         loss_value  = tf.reduce_sum(self.architecture.losses) + loss_value
         self.total_loss_tracker.update_state(loss_value)
-        results = {m.name: m.result() for m in self.metrics}
+
+        if self.list_metrics:
+            for metric in self.list_metrics:
+                metric.update_state(targets, y_pred)
+
+        results = {}
+        for metric in self.metrics:
+            if isinstance(metric.result(), dict):
+                for k, v in metric.result().items():
+                    results[k] = v
+            else:
+                results[metric.name] = metric.result()
         return results
         
     def call(self, inputs):

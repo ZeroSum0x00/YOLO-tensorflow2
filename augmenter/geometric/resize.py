@@ -14,21 +14,29 @@ class Resize:
         self.interpolation = interpolation
 
     def __call__(self, image, bboxes):
-        h, w, _    = image.shape
+        try:
+            h, w, _ = image.shape
+        except:
+            h, w    = image.shape
+            
         ih, iw, _  = self.target_size
         image = cv2.resize(image, dsize=(iw, ih), interpolation=self.interpolation)
         scale = min(iw/w, ih/h)
         nw, nh  = int(scale * w), int(scale * h)
         dw, dh = (iw - nw) // 2, (ih - nh) // 2
         box_data = np.zeros((self.max_bboxes, 5))
+        box_data[:, -1] = -1
+        
         if len(bboxes) > 0:
             np.random.shuffle(bboxes)
+            
             if self.coords == "centroids":
                 bboxes = coordinates_converter(bboxes, conversion="centroids2corners")
 
             bboxes[:, [0, 2]] = np.round(bboxes[:, [0, 2]] * (iw/w), decimals=0)
             bboxes[:, [1, 3]] = np.round(bboxes[:, [1, 3]] * (ih/h), decimals=0)
             bboxes[:, 0:2][bboxes[:, 0:2] < 0] = 0
+            
             if self.coords == "centroids":
                 bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
                 
@@ -40,28 +48,38 @@ class Resize:
       
 
 class ResizePadded:
-    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=100, jitter=.3, flexible=False):
-        self.target_size = target_size
-        self.coords      = coords
-        self.max_bboxes  = max_bboxes
-        self.jitter      = jitter
-        self.flexible    = flexible
+    def __init__(self, target_size=(416, 416, 3), coords="corners", max_bboxes=100, jitter=.3, flexible=False, padding_color=None):
+        self.target_size   = target_size
+        self.coords        = coords
+        self.max_bboxes    = max_bboxes
+        self.jitter        = jitter
+        self.flexible      = flexible
+        self.padding_color = padding_color
 
     def __call__(self, image, bboxes):
-        h, w, _    = image.shape
+        try:
+            h, w, _ = image.shape
+        except:
+            h, w    = image.shape
+            
         ih, iw, _  = self.target_size
-
+        fill_color  = self.padding_color if self.padding_color else [random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)]
+        
         if not self.flexible:
             scale = min(iw/w, ih/h)
             nw, nh  = int(scale * w), int(scale * h)
             dw, dh = (iw - nw) // 2, (ih - nh) // 2
             image_resized = cv2.resize(image, (nw, nh))
-            image_paded = np.full(shape=[ih, iw, 3], fill_value=128.0, dtype=image.dtype)
+            
+            image_paded = np.full(shape=[ih, iw, 3], fill_value=fill_color, dtype=image.dtype)
             image_paded[dh:nh+dh, dw:nw+dw, :] = image_resized
 
             box_data = np.zeros((self.max_bboxes, 5))
+            box_data[:, -1] = -1
+
             if len(bboxes) > 0:
                 np.random.shuffle(bboxes)
+                
                 if self.coords == "centroids":
                     bboxes = coordinates_converter(bboxes, conversion="centroids2corners")
                 
@@ -73,16 +91,18 @@ class ResizePadded:
                 box_w   = bboxes[:, 2] - bboxes[:, 0]
                 box_h   = bboxes[:, 3] - bboxes[:, 1]
                 bboxes  = bboxes[np.logical_and(box_w > 1, box_h > 1)]
+                
                 if self.coords == "centroids":                    
                     bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
                     
                 if len(bboxes) > self.max_bboxes: 
                     bboxes = bboxes[:self.max_bboxes]
+                    
                 box_data[:len(bboxes)] = bboxes
             return image_paded, box_data
 
         new_ar = w / h * random_range(1 - self.jitter, 1 + self.jitter) / random_range(1 - self.jitter, 1 + self.jitter)
-        scale = random_range(.25, 2)
+        scale = random_range(0.35, 2)
 
         if new_ar < 1:
             nh = int(scale * ih)
@@ -98,7 +118,8 @@ class ResizePadded:
 
         height = max(ih, nh + abs(dh))
         width = max(iw, nw + abs(dw))
-        image_paded = np.full(shape=[height, width, 3], fill_value=128.0)
+        image_paded = np.full(shape=[height, width, 3], fill_value=fill_color)
+        
         if dw < 0 and dh >= 0:
             image_paded[dh:nh+dh, 0:nw, :] = image_resized
             if width == iw:
@@ -122,6 +143,7 @@ class ResizePadded:
             image_paded = image_paded[:ih, :iw]
 
         hpd, wpd, _ = image_paded.shape
+        
         if hpd < ih or wpd <iw:
             image_temp = np.full(shape=[ih, iw, 3], fill_value=128.0)
             image_temp[:hpd, :wpd] = image_paded
@@ -131,6 +153,8 @@ class ResizePadded:
         image_data      = np.array(image, np.uint8)
 
         box_data = np.zeros((self.max_bboxes, 5))
+        box_data[:, -1] = -1
+        
         if len(bboxes) > 0:
             np.random.shuffle(bboxes)
             if self.coords == "centroids":                
