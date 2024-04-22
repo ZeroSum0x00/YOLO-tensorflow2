@@ -2,7 +2,7 @@ FROM tensorflow/tensorflow:2.9.3-gpu
 
 COPY . /app
 
-RUN apt-get update -y && apt-get install -y apt-transport-https
+RUN apt-get update -y && apt-get install -y apt-transport-https vim
 
 RUN apt install -y libsm6 libxext6 libxrender1
 
