@@ -5,6 +5,7 @@ from datetime import datetime
 from utils.time import datetime2string
 from utils.logger import logger
 
+
 class TrainSummary(tf.keras.callbacks.Callback):
     def __init__(self,
                  file_path):
@@ -30,20 +31,21 @@ class TrainSummary(tf.keras.callbacks.Callback):
         else:
             self.loss_infomation['loss']['train_values'].append(train_loss)
             self.loss_infomation['loss']['valid_values'].append(valid_loss)
-        
-        for metric in self.model.list_metrics:
-            metric_name = metric.name
-            metric_type = metric.save_type.lower()
-            if metric_name not in self.metric_infomation:
-                self.metric_infomation[metric_name] = {}
-                self.metric_infomation[metric_name]['train_values'] = []
-                self.metric_infomation[metric_name]['valid_values'] = []
 
-            train_value = logs.get(metric_name)
-            valid_value = logs.get('val_' + metric_name)
-            self.metric_infomation[metric_name]['train_values'].append(train_value)
-            self.metric_infomation[metric_name]['valid_values'].append(valid_value)
-            self.metric_infomation[metric_name]['metric_type']= metric_type
+        if self.model.list_metrics:
+            for metric in self.model.list_metrics:
+                metric_name = metric.name
+                metric_type = metric.save_type.lower()
+                if metric_name not in self.metric_infomation:
+                    self.metric_infomation[metric_name] = {}
+                    self.metric_infomation[metric_name]['train_values'] = []
+                    self.metric_infomation[metric_name]['valid_values'] = []
+    
+                train_value = logs.get(metric_name)
+                valid_value = logs.get('val_' + metric_name)
+                self.metric_infomation[metric_name]['train_values'].append(train_value)
+                self.metric_infomation[metric_name]['valid_values'].append(valid_value)
+                self.metric_infomation[metric_name]['metric_type']= metric_type
         
     def on_train_begin(self, epoch, logs={}):
         self.start_time = datetime.now()
