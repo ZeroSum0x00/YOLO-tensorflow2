@@ -1,5 +1,9 @@
+# tensorflow
+tensorflow_addons
 opencv-python
+tqdm
+scipy
 imagesize
 scikit-learn
 matplotlib
-tqdm
+PyYAML
