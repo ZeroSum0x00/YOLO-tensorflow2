@@ -1,10 +1,12 @@
 import os
 import shutil
-from data_utils.data_flow import get_train_test_data
+import argparse
+import tensorflow as tf
 from models import build_models
 from losses import build_losses
 from optimizers import build_optimizer
 from callbacks import build_callbacks, mAPEvaluate
+from data_utils.data_flow import get_train_test_data
 from utils.train_processing import create_folder_weights, train_prepare
 from utils.config_processing import load_config
 
@@ -79,7 +81,15 @@ def train(file_config):
             model.evaluate(test_generator)
             
         model.save_weights(TRAINING_TIME_PATH + 'weights/last_weights', save_format=train_config['save_weight_type'])
-          
 
+
+def parse_opt():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=str, default="./configs/yolov3.yaml", help="config file path")
+    return parser.parse_args()
+
+    
 if __name__ == '__main__':
-    train('./configs/yolov3.yaml')
+    cfg = parse_opt()
+    file_config = cfg.config
+    train(file_config)
