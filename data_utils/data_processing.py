@@ -189,8 +189,8 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, anchors_mask, num_cl
             boxes_h = true_boxes[..., 3] - true_boxes[..., 2]                   # Tính toán h
             boxes_wh =  np.stack([boxes_w, boxes_h], axis=-1)
 
-    true_boxes[..., 0:2] = boxes_xy / input_shape[::-1]
-    true_boxes[..., 2:4] = boxes_wh / input_shape[::-1]
+    true_boxes[..., 0:2] = boxes_xy / input_shape[..., ::-1]
+    true_boxes[..., 2:4] = boxes_wh / input_shape[..., ::-1]
     
     anchors         = np.expand_dims(anchors, axis=0)
     anchor_maxes    = anchors / 2.
