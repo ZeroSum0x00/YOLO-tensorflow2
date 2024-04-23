@@ -60,7 +60,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
         out_scores = out_scores.numpy()
         out_classes = out_classes.numpy()
         
-        top_100     = np.argsort(out_scores)[::-1][:self.max_bboxes]
+        top_100     = np.argsort(out_scores)[..., ::-1][:self.max_bboxes]
         out_boxes   = out_boxes[top_100]
         out_scores  = out_scores[top_100]
         out_classes = out_classes[top_100]
