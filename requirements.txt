@@ -7,3 +7,4 @@ imagesize
 scikit-learn
 matplotlib
 PyYAML
+prettytable
