@@ -94,8 +94,8 @@ class YOLOLoss(tf.keras.losses.Loss):
                 location_loss   = K.sum(iou_value)
             else:
                 grid_shapes = [K.cast(K.shape(y_pred[l])[1:3], K.dtype(y_true[0])) for l in range(num_layers)]
-                raw_true_xy     = y_true[l][..., :2] * grid_shapes[l][::-1] - grid
-                raw_true_wh     = K.log(y_true[l][..., 2:4] / self.anchors[self.anchor_masks[l]] * input_shape[::-1])
+                raw_true_xy     = y_true[l][..., :2] * grid_shapes[l][..., ::-1] - grid
+                raw_true_wh     = K.log(y_true[l][..., 2:4] / self.anchors[self.anchor_masks[l]] * input_shape[..., ::-1])
 
                 raw_true_wh     = K.switch(object_mask, raw_true_wh, K.zeros_like(raw_true_wh))
 
