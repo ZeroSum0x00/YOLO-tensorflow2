@@ -1,145 +1,233 @@
-import numpy as np
+"""
+  # Description:
+    - The following table comparing the params of the DarkNet 53 (YOLOv3 backbone) in Tensorflow on 
+    image size 416 x 416 x 3:
+
+       -----------------------------------------
+      |      Model Name      |     Params       |
+      |-----------------------------------------|
+      |      DarkNet53       |    41,645,640    |
+       -----------------------------------------
+
+  # Reference:
+    - Source: https://github.com/pythonlessons/TensorFlow-2.x-YOLOv3
+
+"""
+
+from __future__ import print_function
+from __future__ import absolute_import
+
+import warnings
+
 import tensorflow as tf
-from tensorflow.keras import Model
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import ZeroPadding2D
-from tensorflow.keras.layers import concatenate
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import GlobalMaxPooling2D
+from tensorflow.keras.layers import GlobalAveragePooling2D
 from tensorflow.keras.layers import add
-from tensorflow.keras import backend as K
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.initializers import RandomNormal
+from tensorflow.keras.utils import get_source_inputs, get_file
 
 from models.layers import get_activation_from_name, get_normalizer_from_name
-from utils.logger import logger
+from utils.model_processing import _obtain_input_shape
 
 
-def convolutional_block(x, filters, kernel_size, downsample=False, activation='leaky', normalizer='batchnorm', regularizer_decay=5e-4):
-    if downsample:
-        x = ZeroPadding2D(((1, 0), (1, 0)))(x)
-        padding = 'valid'
-        strides = 2
+class ConvolutionBlock(tf.keras.layers.Layer):
+    def __init__(self, 
+                 filters, 
+                 kernel_size       = 3, 
+                 downsample        = False, 
+                 dilation_rate     = (1, 1),
+                 groups            = 1,
+                 activation        = 'leaky-relu', 
+                 normalizer        = 'batch-norm', 
+                 regularizer_decay = 5e-4,
+                 **kwargs):
+        super(ConvolutionBlock, self).__init__(**kwargs)
+        self.filters           = filters
+        self.kernel_size       = kernel_size
+        self.downsample        = downsample
+        self.dilation_rate     = dilation_rate
+        self.groups            = groups
+        self.activation        = activation
+        self.normalizer        = normalizer
+        self.regularizer_decay = regularizer_decay
+        
+        if downsample:
+            self.padding = 'valid'
+            self.strides = 2
+        else:
+            self.padding = 'same'
+            self.strides = 1
+
+    def build(self, input_shape):
+        self.padding_layer = ZeroPadding2D(padding=((1, 0), (1, 0))) if self.downsample else None
+        self.conv = Conv2D(filters=self.filters, 
+                           kernel_size=self.kernel_size, 
+                           strides=self.strides,
+                           padding=self.padding, 
+                           dilation_rate=self.dilation_rate,
+                           groups=self.groups,
+                           use_bias=False if self.normalizer else True, 
+                           kernel_initializer=RandomNormal(stddev=0.02),
+                           kernel_regularizer=l2(self.regularizer_decay))
+        self.normalizer = get_normalizer_from_name(self.normalizer)
+        self.activation = get_activation_from_name(self.activation)
+
+    def call(self, inputs, training=False):
+        if self.downsample:
+            inputs = self.padding_layer(inputs)
+        x = self.conv(inputs, training=training)
+        if self.normalizer:
+            x = self.normalizer(x, training=training)
+        if self.activation:
+            x = self.activation(x)
+        return x
+
+
+class ResidualBlock(tf.keras.layers.Layer):
+    def __init__(self, 
+                 num_filters, 
+                 activation        = 'leaky-relu', 
+                 normalizer        = 'batch-norm', 
+                 **kwargs):
+        super(ResidualBlock, self).__init__(**kwargs)
+        self.num_filters = num_filters
+        self.activation  = activation
+        self.normalizer  = normalizer
+                     
+    def build(self, input_shape):
+        self.conv1 = ConvolutionBlock(self.num_filters[0], 1, activation=self.activation, normalizer=self.normalizer)
+        self.conv2 = ConvolutionBlock(self.num_filters[1], 3, activation=self.activation, normalizer=self.normalizer)
+    
+    def call(self, inputs, training=False):
+        x = self.conv1(inputs, training=training)
+        x = self.conv2(x, training=training)
+        return add([inputs, x])
+
+
+def DarkNet53(include_top=True,
+              weights='imagenet',
+              input_tensor=None,
+              input_shape=None,
+              pooling=None,
+              activation='leaky-relu', 
+              normalizer='batch-norm',
+              final_activation="softmax",
+              classes=1000):
+
+    if weights not in {'imagenet', None}:
+        raise ValueError('The `weights` argument should be either '
+                         '`None` (random initialization) or `imagenet` '
+                         '(pre-training on ImageNet).')
+
+    if weights == 'imagenet' and include_top and classes != 1000:
+        raise ValueError('If using `weights` as imagenet with `include_top`'
+                         ' as true, `classes` should be 1000')
+
+    # Determine proper input shape
+    input_shape = _obtain_input_shape(input_shape,
+                                      default_size=640,
+                                      min_size=32,
+                                      data_format=K.image_data_format(),
+                                      require_flatten=include_top,
+                                      weights=weights)
+
+    if input_tensor is None:
+        img_input = Input(shape=input_shape)
     else:
-        strides = 1
-        padding = 'same'
+        if not K.is_keras_tensor(input_tensor):
+            img_input = Input(tensor=input_tensor, shape=input_shape)
+        else:
+            img_input = input_tensor
 
-    x = Conv2D(filters=filters, 
-               kernel_size=kernel_size, 
-               strides=strides,
-               padding=padding, 
-               use_bias=not normalizer, 
-               kernel_initializer=RandomNormal(stddev=0.02),
-               kernel_regularizer=l2(regularizer_decay))(x)
-    if normalizer:
-        x = get_normalizer_from_name(normalizer)(x)
-    if activation:
-        x = get_activation_from_name(activation)(x)
-    return x
-
-
-def residual_block(x, num_filters, activation='leaky', normalizer='batchnorm'):
-    shortcut = x
-    x = convolutional_block(x, filters=num_filters[0], kernel_size=1, activation=activation, normalizer=normalizer)
-    x = convolutional_block(x, filters=num_filters[1], kernel_size=3, activation=activation, normalizer=normalizer)
-    x = add([shortcut, x])
-    return x
-
-
-def DarkNet53(input_shape, activation='leaky', normalizer='batchnorm', model_weights=None):
-    input_data  = Input(input_shape)
-    x = convolutional_block(input_data, 32, 3, activation=activation, normalizer=normalizer)
-    x = convolutional_block(x, 64, 3, downsample=True, activation=activation, normalizer=normalizer)
+    x = ConvolutionBlock(32, 3, activation=activation, normalizer=normalizer, name="stage1_block1")(img_input)
+    
+    x = ConvolutionBlock(64, 3, downsample=True, activation=activation, normalizer=normalizer, name="stage2_block1")(x)
     
     for i in range(1):
-        x = residual_block(x,  [32, 64], activation=activation, normalizer=normalizer)
+        x = ResidualBlock(num_filters=[32, 64], activation=activation, normalizer=normalizer, name=f'stage2_block{i + 2}')(x)
 
-    x = convolutional_block(x, 128, 3, downsample=True, activation=activation, normalizer=normalizer)
+    x = ConvolutionBlock(128, 3, downsample=True, activation=activation, normalizer=normalizer, name="stage3_block1")(x)
 
     for i in range(2):
-        x = residual_block(x, [64, 128], activation=activation, normalizer=normalizer)
+        x = ResidualBlock(num_filters=[64, 128], activation=activation, normalizer=normalizer, name=f'stage3_block{i + 2}')(x)
 
-    x = convolutional_block(x, 256, 3, downsample=True, activation=activation, normalizer=normalizer)
-
-    for i in range(8):
-        x = residual_block(x, [128, 256], activation=activation, normalizer=normalizer)
-
-    route_1 = x
-    x = convolutional_block(x, 512, 3, downsample=True, activation=activation, normalizer=normalizer)
+    x = ConvolutionBlock(256, 3, downsample=True, activation=activation, normalizer=normalizer, name="stage4_block1")(x)
 
     for i in range(8):
-        x = residual_block(x, [256, 512], activation=activation, normalizer=normalizer)
+        x = ResidualBlock(num_filters=[128, 256], activation=activation, normalizer=normalizer, name=f'stage4_block{i + 2}')(x)
 
-    route_2 = x
-    x = convolutional_block(x, 1024, 3, downsample=True, activation=activation, normalizer=normalizer)
+    x = ConvolutionBlock(512, 3, downsample=True, activation=activation, normalizer=normalizer, name="stage5_block1")(x)
+
+    for i in range(8):
+        x = ResidualBlock(num_filters=[256, 512], activation=activation, normalizer=normalizer, name=f'stage5_block{i + 2}')(x)
+
+    x = ConvolutionBlock(1024, 3, downsample=True, activation=activation, normalizer=normalizer, name="stage6_block1")(x)
 
     for i in range(4):
-        x = residual_block(x, [512, 1024], activation=activation, normalizer=normalizer)
-    
-    model = Model(inputs=input_data, outputs=[route_1, route_2, x], name='DarkNet-53')
-    
-    if model_weights:
-        model.load_weights(model_weights)
-        logger.info("Load DarkNet-53 weights from {}".format(model_weights))
+        x = ResidualBlock(num_filters=[512, 1024], activation=activation, normalizer=normalizer, name=f'stage6_block{i + 2}')(x)
+        
+    if include_top:
+        # Classification block
+        x = GlobalAveragePooling2D(name='global_avgpool')(x)
+        x = Dense(1 if classes == 2 else classes, name='predictions')(x)
+        x = get_activation_from_name(final_activation)(x)
+    else:
+        if pooling == 'avg':
+            x = GlobalAveragePooling2D()(x)
+        elif pooling == 'max':
+            x = GlobalMaxPooling2D()(x)
+
+    # Ensure that the model takes into account
+    # any potential predecessors of `input_tensor`.
+    if input_tensor is not None:
+        inputs = get_source_inputs(input_tensor)
+    else:
+        inputs = img_input
+
+    model = Model(inputs, x, name='DarkNet-53')
+
+
+    if K.image_data_format() == 'channels_first' and K.backend() == 'tensorflow':
+        warnings.warn('You are using the TensorFlow backend, yet you '
+                      'are using the Theano '
+                      'image data format convention '
+                      '(`image_data_format="channels_first"`). '
+                      'For best performance, set '
+                      '`image_data_format="channels_last"` in '
+                      'your Keras config '
+                      'at ~/.keras/keras.json.')
     return model
 
 
-def CSPDarkNetBlock(x, num_filters, block_iter, activation, normalizer):
-    route = x
-    route = convolutional_block(route, num_filters[1], 1, activation=activation, normalizer=normalizer)
-    
-    x = convolutional_block(x, num_filters[1], 1, activation=activation, normalizer=normalizer)
+def DarkNet53_backbone(input_shape=(416, 416, 3),
+                       include_top=False, 
+                       weights='imagenet', 
+                       activation='leaky-relu', 
+                       normalizer='batch-norm',
+                       custom_layers=None) -> Model:
 
-    for i in range(block_iter):
-        x = residual_block(x,  [num_filters[0], num_filters[1]], activation=activation, normalizer=normalizer)
+    model = DarkNet53(include_top=include_top, 
+                      weights=weights,
+                      activation=activation,
+                      normalizer=normalizer,
+                      input_shape=input_shape)
 
-    x = convolutional_block(x, num_filters[1], 1, activation=activation, normalizer=normalizer)
-    x = concatenate([x, route], axis=-1)
-    x = convolutional_block(x, num_filters[0]*2, 1, activation=activation, normalizer=normalizer)
-    return x
-
-
-def CSPDarkNet53(input_shape, activation='mish', normalizer='batchnorm', model_weights=None):
-    input_data  = Input(input_shape)
-
-    x = convolutional_block(input_data, 32, 3, activation=activation, normalizer=normalizer)
-
-    # Downsample 1
-    x = convolutional_block(x, 64, 3, downsample=True, activation=activation, normalizer=normalizer)
-    
-    # CSPResBlock 1
-    x = CSPDarkNetBlock(x, [32, 64], 1, activation=activation, normalizer=normalizer)
-
-    # Downsample 2
-    x = convolutional_block(x, 128, 3, downsample=True, activation=activation, normalizer=normalizer)
-
-    # CSPResBlock 2
-    x = CSPDarkNetBlock(x, [64, 64], 2, activation=activation, normalizer=normalizer)
-
-    # Downsample 3
-    x = convolutional_block(x, 256, 3, downsample=True, activation=activation, normalizer=normalizer)
-
-    # CSPResBlock 3
-    x = CSPDarkNetBlock(x, [128, 128], 8, activation=activation, normalizer=normalizer)
-
-    route_1 = x
-
-    # Downsample 4
-    x = convolutional_block(x, 512, 3, downsample=True, activation=activation, normalizer=normalizer)
-
-    # CSPResBlock 4
-    x = CSPDarkNetBlock(x, [256, 256], 8, activation=activation, normalizer=normalizer)
-
-    route_2 = x
-
-    # Downsample 5
-    x = convolutional_block(x, 1024, 3, downsample=True, activation=activation, normalizer=normalizer)
-
-    # CSPResBlock 5
-    x = CSPDarkNetBlock(x, [512, 512], 4, activation=activation, normalizer=normalizer)
-
-    model = Model(inputs=input_data, outputs=[route_1, route_2, x], name="CSPDarkNet-53")
-    
-    if model_weights:
-        model.load_weights(model_weights)
-        logger.info("Load CSPDarkNet-53 weights from {}".format(model_weights))
-    return model
+    if custom_layers is not None:
+        y_i = []
+        for layer in custom_layers:
+            y_i.append(model.get_layer(layer).output)
+        return Model(inputs=model.inputs, outputs=[y_i], name=model.name + '_backbone')
+    else:
+        y_2 = model.get_layer("stage2_block2").output
+        y_4 = model.get_layer("stage3_block3").output
+        y_8 = model.get_layer("stage4_block9").output
+        y_16 = model.get_layer("stage5_block9").output
+        y_32 = model.get_layer("stage6_block5").output
+        return Model(inputs=model.inputs, outputs=[y_2, y_4, y_8, y_16, y_32], name=model.name + '_backbone')
