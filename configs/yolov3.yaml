@@ -20,59 +20,28 @@ Dataset:
     data_augmentation:
         train:
             main:
-                - RandomGaussianBlur:
-                    sigma_range: [0.4, 0.8]
-                - RandomBrightness:
-                    delta_range: 150
-                - RandomContrast:
-                    lower: 0.5
-                    upper: 1.5
-                - RandomErodeDilate:
-                    kernel_size: [3, 3]
                 - RandomFlip:
                     mode: 'horizontal'
                 - RandomLightIntensity:
                     hue_range: 0.1
-                    sat_range: 0.3
-                    val_range: 0.2
-                - RandomSaltAndPepper:
-                    ratio_range: 0.3
-                    phi_range: 0.1
-                - RandomSharpen:
-                    lightness_range: [0.75, 2.0]
-                    alpha_range: 0.1
-                - RandomSaturation:
-                    lower: 0.3
-                    upper: 2.0
+                    sat_range: 0.7
+                    val_range: 0.4
                 - ResizePadded:
-                    jitter: 0.1
+                    jitter: 0.3
                     padding_color: [128, 128, 128]
                     flexible: True
             auxiliary:
             merge:
         valid:
+            main:
+                - ResizePadded:
+                    padding_color: [128, 128, 128]
+                    flexible: False
+            auxiliary:
+            merge:
         test:
     data_endemic_augmention:
         train:
-            main:
-                - Mosaic:
-                    min_offset: [0.3, 0.7]
-                    jitter: 0.1
-                    padding_color: [128, 128, 128]
-                - RandomFlip:
-                    mode: 'horizontal'
-                - LightIntensityChange:
-                    hue: 0.1
-                    sat: 0.3
-                    val: 0.2
-            auxiliary:
-                - ResizePadded:
-                    jitter: 0.1
-                    padding_color: [128, 128, 128]
-                    flexible: True
-            merge:
-                - Mixup:
-                    main_object_ratio: 0.6
         valid:
         test:
     data_loader_mode: 0
@@ -97,13 +66,15 @@ Model:
     load_weight_type: null
     Architecture:
         name: YOLOv3
+        head_dims: [256, 512, 1024]
         activation: 'leaky-relu'
         normalizer: 'batch-norm'
         max_boxes: *max_bboxes
+        confidence: 0.05
         nms_iou: 0.5
         gray_padding: True
     Backbone:
-        name: DarkNet53
+        name: DarkNet53_backbone
         activation: 'leaky-relu'
         normalizer: 'batch-norm'
         
@@ -140,7 +111,7 @@ Optimizer:
 
 Callbacks:
     - mAPEvaluate:
-        max_bboxes: 100
+        max_bboxes: *max_bboxes
         minoverlap: 0.5
         saved_best_map: True
         show_frequency: 10
