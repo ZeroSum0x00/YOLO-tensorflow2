@@ -11,58 +11,13 @@ from tensorflow.keras.regularizers import l2
 from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.utils import plot_model
 
+from models.architectures.darknet53 import ConvolutionBlock
 from models.layers import get_activation_from_name, get_normalizer_from_name
 from utils.bboxes import yolo_correct_boxes, get_anchors_and_decode
 from utils.train_processing import losses_prepare
 from utils.constant import *
 from utils.logger import logger
 
-
-class ConvolutionBlock(tf.keras.layers.Layer):
-    def __init__(self, 
-                 filters, 
-                 kernel_size       = 3, 
-                 downsample        = False, 
-                 activation        = 'leaky-relu', 
-                 normalizer        = 'batch-norm', 
-                 regularizer_decay = 5e-4,
-                 **kwargs):
-        super(ConvolutionBlock, self).__init__(**kwargs)
-        self.filters           = filters
-        self.kernel_size       = kernel_size
-        self.downsample        = downsample
-        self.activation        = activation
-        self.normalizer        = normalizer
-        self.regularizer_decay = regularizer_decay
-        
-        if downsample:
-            self.padding = 'valid'
-            self.strides = 2
-        else:
-            self.padding = 'same'
-            self.strides = 1
-
-    def build(self, input_shape):
-        self.padding_layer = ZeroPadding2D(((1, 0), (1, 0))) if self.downsample else None
-        self.conv = Conv2D(filters=self.filters, 
-                           kernel_size=self.kernel_size, 
-                           strides=self.strides,
-                           padding=self.padding, 
-                           use_bias=False if self.normalizer else True, 
-                           kernel_initializer=RandomNormal(stddev=0.02),
-                           kernel_regularizer=l2(self.regularizer_decay))
-        self.normalizer = get_normalizer_from_name(self.normalizer)
-        self.activation = get_activation_from_name(self.activation)
-
-    def call(self, inputs, training=False):
-        if self.downsample:
-            inputs = self.padding_layer(inputs)
-        x = self.conv(inputs, training=training)
-        if self.normalizer:
-            x = self.normalizer(x, training=training)
-        if self.activation:
-            x = self.activation(x)
-        return x
 
     
 class FPNLayer(tf.keras.layers.Layer):
@@ -76,20 +31,20 @@ class FPNLayer(tf.keras.layers.Layer):
         self.normalizer     = normalizer
 
     def build(self, input_shape):
-        self.P5_block = self._conv_block([512, 1024, 512, 1024, 512], self.activation, self.normalizer)
-        self.P5_up    = self._upsample_block(256, 2, self.activation, self.normalizer)
-        self.P4_block = self._conv_block([256, 512, 256, 512, 256], self.activation, self.normalizer)
-        self.P4_up    = self._upsample_block(128, 2, self.activation, self.normalizer)
-        self.P3_block = self._conv_block([128, 256, 128, 256, 128], self.activation, self.normalizer)
+        self.P5_block = self._conv_block([512, 1024, 512, 1024, 512])
+        self.P5_up    = self._upsample_block(256, 2)
+        self.P4_block = self._conv_block([256, 512, 256, 512, 256])
+        self.P4_up    = self._upsample_block(128, 2)
+        self.P3_block = self._conv_block([128, 256, 128, 256, 128])
 
-    def _conv_block(self, num_filters, activation='leaky', normalizer='batchnorm'):
+    def _conv_block(self, num_filters):
         return Sequential([
-            ConvolutionBlock(filters, 1 if i % 2 == 0 else 3, False, activation, normalizer) for i, filters in enumerate(num_filters)
+            ConvolutionBlock(filters, 1 if i % 2 == 0 else 3, False, activation=self.activation, normalizer=self.normalizer) for i, filters in enumerate(num_filters)
         ])
 
-    def _upsample_block(self, filters, upsample_size, activation='leaky', normalizer='batchnorm'):
+    def _upsample_block(self, filters, upsample_size):
         return Sequential([
-            ConvolutionBlock(filters, 1, False, activation, normalizer),
+            ConvolutionBlock(filters, 1, False, activation=self.activation, normalizer=self.normalizer),
             UpSampling2D(size=upsample_size,)
         ])
 
@@ -119,6 +74,7 @@ class FPNLayer(tf.keras.layers.Layer):
 class YOLOv3(tf.keras.Model):
     def __init__(self, 
                  backbone,
+                 head_dims    = [256, 512, 1024],
                  anchors      = yolo_anchors,
                  anchor_masks = yolo_anchor_masks,
                  num_classes  = 80,
@@ -133,10 +89,11 @@ class YOLOv3(tf.keras.Model):
                  **kwargs):
         super(YOLOv3, self).__init__(name=name, **kwargs)
         self.backbone             = backbone
+        self.head_dims            = head_dims
         self.num_classes          = num_classes
         self.anchors              = np.array(anchors)
         self.num_anchor_per_scale = len(anchor_masks)
-        self.anchor_masks          = np.array(anchor_masks)
+        self.anchor_masks         = np.array(anchor_masks)
         self.activation           = activation
         self.normalizer           = normalizer
         self.max_boxes            = max_boxes
@@ -146,25 +103,38 @@ class YOLOv3(tf.keras.Model):
         self.gray_padding         = gray_padding
 
     def build(self, input_shape):
-        self.neck       = FPNLayer(self.activation, self.normalizer, name="FPNLayer")
-        self.conv_lbbox = self._yolo_head(1024, self.activation, self.normalizer, name='large_bbox_predictor')
-        self.conv_mbbox = self._yolo_head(512, self.activation, self.normalizer, name='medium_bbox_predictor')
-        self.conv_sbbox = self._yolo_head(256, self.activation, self.normalizer, name='small_bbox_predictor')
+        if isinstance(self.head_dims, (tuple, list)):
+            if len(self.head_dims) != 3:
+                raise ValueError("Length head_dims mutch equal 3")
+        else:
+            self.head_dims = [self.head_dims * 2**i for i in range(3)]
 
-    def _yolo_head(self, filters, activation='leaky', normalizer='batchnorm', name='upsample_block'):
+        h0, h1, h2 = self.head_dims
+        self.neck       = FPNLayer(self.activation, self.normalizer, name="FPNLayer")
+        self.conv_sbbox = self._yolo_head(h0, name='small_bbox_predictor')
+        self.conv_mbbox = self._yolo_head(h1, name='medium_bbox_predictor')
+        self.conv_lbbox = self._yolo_head(h2, name='large_bbox_predictor')
+
+    def _yolo_head(self, filters, name='upsample_block'):
         return Sequential([
-            ConvolutionBlock(filters, 3, False, activation, normalizer),
-            ConvolutionBlock(self.num_anchor_per_scale*(self.num_classes + 5), 1, False, None, None)
+            ConvolutionBlock(filters, 3, False, activation=self.activation, normalizer=self.normalizer),
+            ConvolutionBlock(self.num_anchor_per_scale*(self.num_classes + 5), 1, False, activation=None, normalizer=None)
         ], name=name)
-        
+
     def call(self, inputs, training=False):
-        P3, P4, P5 = self.backbone(inputs, training=training)
-        P3, P4, P5 = self.neck([P3, P4, P5], training=training)
-        P5_out     = self.conv_lbbox(P5, training=training)
-        P4_out     = self.conv_mbbox(P4, training=training)
-        P3_out     = self.conv_sbbox(P3, training=training)
+        feature_maps = self.backbone(inputs, training=training)
+        P3, P4, P5   = feature_maps[2:]
+        P3, P4, P5   = self.neck([P3, P4, P5], training=training)
+        P5_out       = self.conv_lbbox(P5, training=training)
+        P4_out       = self.conv_mbbox(P4, training=training)
+        P3_out       = self.conv_sbbox(P3, training=training)
         return P5_out, P4_out, P3_out
-        
+
+    @tf.function
+    def predict(self, inputs):
+        output_model = self(inputs, training=False)
+        return output_model
+
     def calc_loss(self, y_true, y_pred, loss_object):
         loss = losses_prepare(loss_object)
         loss_value = 0
@@ -173,7 +143,7 @@ class YOLOv3(tf.keras.Model):
         return loss_value
         
     def decode(self, inputs):
-        image_shape = K.reshape(inputs[-1],[-1])
+        image_shape = K.reshape(inputs[-1], [-1])
         box_xy = []
         box_wh = []
         box_confidence  = []
