@@ -2,6 +2,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.keras import backend as K
 from .linear_layer import LinearLayer
+from utils.logger import logger
 
 
 def get_normalizer_from_name(norm_name, *args, **kwargs):
@@ -31,5 +32,8 @@ def get_normalizer_from_name(norm_name, *args, **kwargs):
         elif norm_name in ['evn', 'evo', 'evonorm', 'evo-norm', 'evo-normalization', 'evo normalization']:
             from models.layers import EvoNormalization
             return EvoNormalization(*args, **kwargs)
+        else:
+            logger.warning(f"Can't load {norm_name} normalization, use 'Linear' layer as an option")
+            return LinearLayer(*args, **kwargs)
     else:
         return LinearLayer(*args, **kwargs)
