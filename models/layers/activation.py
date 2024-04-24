@@ -4,6 +4,7 @@ from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import LeakyReLU
 from tensorflow.keras.layers import ReLU
 from .normalization import get_normalizer_from_name
+from utils.logger import logger
 
 
 class Mixture(tf.keras.layers.Layer):
@@ -370,6 +371,7 @@ def get_activation_from_name(activ_name, *args, **kwargs):
         elif activ_name == 'elsa':
             return ELSA(*args, **kwargs)
         else:
+            logger.warning(f"Can't load {activ_name} activation, use 'Linear' layer as an option")
             return Activation('linear')
     else:
         return Activation('linear')
