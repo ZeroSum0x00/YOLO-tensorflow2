@@ -51,7 +51,7 @@ class FPNLayer(tf.keras.layers.Layer):
     def _upsample_block(self, filters, upsample_size):
         return Sequential([
             ConvolutionBlock(filters,
-                             kernel_size   = 1,
+                             kernel_size   = (1, 1),
                              downsample    = False,
                              dilation_rate = (1, 1),
                              groups        = 1,
@@ -129,8 +129,20 @@ class YOLOv3(tf.keras.Model):
 
     def _yolo_head(self, filters, name='upsample_block'):
         return Sequential([
-            ConvolutionBlock(filters, 3, False, activation=self.activation, normalizer=self.normalizer),
-            ConvolutionBlock(self.num_anchor_per_scale*(self.num_classes + 5), 1, False, activation=None, normalizer=None)
+            ConvolutionBlock(filters,
+                             kernel_size   = (3, 3),
+                             downsample    = False,
+                             dilation_rate = (1, 1),
+                             groups        = 1,
+                             activation    = self.activation, 
+                             normalizer    = self.normalizer),
+            ConvolutionBlock(self.num_anchor_per_scale*(self.num_classes + 5),
+                             kernel_size   = (1, 1),
+                             downsample    = False,
+                             dilation_rate = (1, 1),
+                             groups        = 1,
+                             activation    = None,
+                             normalizer    = None)
         ], name=name)
 
     def call(self, inputs, training=False):
