@@ -59,8 +59,8 @@ Model:
               [116,  90],
               [156, 198],
               [373, 326]]
-    anchor_masks: [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
-    strides: [8, 16, 32]
+    anchor_masks: [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
+    strides: [32, 16, 8]
     classes: *classes
     weight_path: null
     load_weight_type: null
@@ -95,9 +95,9 @@ Losses:
         box_ratio: 0.05
         obj_ratio: 5.0
         cls_ratio: 0.25
-        label_smoothing: 0.1
+        label_smoothing: 0.0
         iou_method: 'CIOU'
-        focal_loss: True
+        focal_loss: False
         focal_loss_ratio: 10
         focal_alpha_ratio: 0.25
         focal_gamma_ratio: 2
