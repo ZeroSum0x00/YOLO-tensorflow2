@@ -39,13 +39,25 @@ class FPNLayer(tf.keras.layers.Layer):
 
     def _conv_block(self, num_filters):
         return Sequential([
-            ConvolutionBlock(filters, 1 if i % 2 == 0 else 3, False, activation=self.activation, normalizer=self.normalizer) for i, filters in enumerate(num_filters)
+            ConvolutionBlock(filters,
+                             kernel_size   = 1 if i % 2 == 0 else 3,
+                             downsample    = False,
+                             dilation_rate = (1, 1),
+                             groups        = 1,
+                             activation=self.activation,
+                             normalizer=self.normalizer) for i, filters in enumerate(num_filters)
         ])
 
     def _upsample_block(self, filters, upsample_size):
         return Sequential([
-            ConvolutionBlock(filters, 1, False, activation=self.activation, normalizer=self.normalizer),
-            UpSampling2D(size=upsample_size,)
+            ConvolutionBlock(filters,
+                             kernel_size   = 1,
+                             downsample    = False,
+                             dilation_rate = (1, 1),
+                             groups        = 1,
+                             activation=self.activation, 
+                             normalizer=self.normalizer),
+            UpSampling2D(size=upsample_size)
         ])
 
     def call(self, inputs, training=False):
