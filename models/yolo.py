@@ -46,7 +46,7 @@ class YOLO(tf.keras.Model):
     def train_step(self, data):
         loss_value = 0
         images, targets = data
-        targets = [targets[0], targets[1], targets[2]]
+        targets = [targets[2], targets[1], targets[0]]
         
         with tf.GradientTape() as tape:
             y_pred = self.architecture(images, training=True)
@@ -80,7 +80,7 @@ class YOLO(tf.keras.Model):
     def test_step(self, data):
         loss_value = 0
         images, targets = data
-        targets = [targets[0], targets[1], targets[2]]
+        targets = [targets[2], targets[1], targets[0]]
         y_pred  = self.architecture(images, training=False)
         
         for losses in self.loss_object:
