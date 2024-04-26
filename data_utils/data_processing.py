@@ -170,7 +170,7 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, anchors_mask, num_cl
     num_layers  = len(anchors_mask)
 
     batch       = true_boxes.shape[0]
-    grid_shapes = [input_shape // np.array(strides[i]) for i in range(len(strides))]
+    grid_shapes = [input_shape // np.array(strides * 2**(num_layers - 1 - i)) for i in range(num_layers)]
     y_true = [np.zeros((batch, grid_shapes[i][0], grid_shapes[i][1], len(anchors_mask[i]), 5 + num_classes), dtype='float32') for i in range(num_layers)]
 
     if coords == 'centroids':
