@@ -6,8 +6,6 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import UpSampling2D
-from tensorflow.keras.regularizers import l2
-from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.utils import plot_model
 
 from models.architectures.darknet53 import ConvolutionBlock
@@ -134,12 +132,11 @@ class YOLOv3(tf.keras.Model):
                              groups        = 1,
                              activation    = self.activation, 
                              normalizer    = self.normalizer),
-            Conv2D(self.num_anchor_per_scale*(self.num_classes + 5),
-                   kernel_size   = (1, 1),
-                   strides=(1, 1),
-                   padding='valid',
-                   kernel_initializer=RandomNormal(stddev=0.02),
-                   kernel_regularizer=l2(5e-4))
+            ConvolutionBlock(self.num_anchor_per_scale*(self.num_classes + 5),
+                             kernel_size   = (1, 1),
+                             downsample    = False,
+                             activation    = None,
+                             normalizer    = None)
         ], name=name)
 
     def call(self, inputs, training=False):
