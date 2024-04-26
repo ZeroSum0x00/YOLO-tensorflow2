@@ -60,7 +60,7 @@ Model:
               [156, 198],
               [373, 326]]
     anchor_masks: [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
-    strides: [32, 16, 8]
+    strides: [8, 16, 32]
     classes: *classes
     weight_path: null
     load_weight_type: null
