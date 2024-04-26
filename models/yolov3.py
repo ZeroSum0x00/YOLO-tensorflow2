@@ -5,18 +5,16 @@ from tensorflow.keras import Model
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import ZeroPadding2D
 from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.initializers import RandomNormal
 from tensorflow.keras.utils import plot_model
 
 from models.architectures.darknet53 import ConvolutionBlock
-from models.layers import get_activation_from_name, get_normalizer_from_name
 from utils.bboxes import yolo_correct_boxes, get_anchors_and_decode
 from utils.train_processing import losses_prepare
-from utils.constant import *
 from utils.logger import logger
+from utils.constant import *
 
 
     
@@ -44,8 +42,8 @@ class FPNLayer(tf.keras.layers.Layer):
                              downsample    = False,
                              dilation_rate = (1, 1),
                              groups        = 1,
-                             activation=self.activation,
-                             normalizer=self.normalizer) for i, filters in enumerate(num_filters)
+                             activation    = self.activation,
+                             normalizer    = self.normalizer) for i, filters in enumerate(num_filters)
         ])
 
     def _upsample_block(self, filters, upsample_size):
@@ -55,8 +53,8 @@ class FPNLayer(tf.keras.layers.Layer):
                              downsample    = False,
                              dilation_rate = (1, 1),
                              groups        = 1,
-                             activation=self.activation, 
-                             normalizer=self.normalizer),
+                             activation    = self.activation, 
+                             normalizer    = self.normalizer),
             UpSampling2D(size=upsample_size)
         ])
 
@@ -136,13 +134,12 @@ class YOLOv3(tf.keras.Model):
                              groups        = 1,
                              activation    = self.activation, 
                              normalizer    = self.normalizer),
-            ConvolutionBlock(self.num_anchor_per_scale*(self.num_classes + 5),
-                             kernel_size   = (1, 1),
-                             downsample    = False,
-                             dilation_rate = (1, 1),
-                             groups        = 1,
-                             activation    = None,
-                             normalizer    = None)
+            Conv2D(self.num_anchor_per_scale*(self.num_classes + 5),
+                   kernel_size   = (1, 1),
+                   strides=(1, 1),
+                   padding='valid',
+                   kernel_initializer=RandomNormal(stddev=0.02),
+                   kernel_regularizer=l2(5e-4))
         ], name=name)
 
     def call(self, inputs, training=False):
