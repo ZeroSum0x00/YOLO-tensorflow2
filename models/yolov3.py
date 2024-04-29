@@ -193,11 +193,11 @@ class YOLOv3(tf.keras.Model):
             nms_index = tf.image.non_max_suppression(class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=self.nms_iou)
 
             class_boxes         = K.gather(class_boxes, nms_index)
-            class_boxes_coord   = tf.concat([class_boxes[:, :2][..., ::-1], class_boxes[:, 2:][..., ::-1]], axis=-1)
+            # class_boxes_coord   = tf.concat([class_boxes[:, :2][..., ::-1], class_boxes[:, 2:][..., ::-1]], axis=-1)
             class_box_scores    = K.gather(class_box_scores, nms_index)
             classes             = K.ones_like(class_box_scores, 'int32') * c
 
-            boxes_out.append(class_boxes_coord)
+            boxes_out.append(class_boxes)
             scores_out.append(class_box_scores)
             classes_out.append(classes)
         boxes_out      = K.concatenate(boxes_out, axis=0)
