@@ -32,6 +32,7 @@ def resize_image(image, target_size, letterbox_image):
 
 def preprocess_input(image):
     image /= 255.0
+    image = np.clip(image, 0, 1)
     return image
 
 
