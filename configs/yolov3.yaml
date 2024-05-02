@@ -2,10 +2,10 @@ Dataset:
     data_dir: "/home/vbpo-101386/Desktop/TuNIT/Datasets/Object Detection/VOCTotal/"
     annotation_dir: null
     data_info:
-        data_type: 'voc'
+        data_type: &data_type 'VOC'
         classes: &classes './configs/voc_classes.names'
         coordinate: 'corners'
-        color_space: 'rgb'
+        color_space: &color_space 'rgb'
         max_bboxes: &max_bboxes 100
         check_data: False
         load_memory: False
@@ -113,6 +113,8 @@ Callbacks:
     - mAPEvaluate:
         max_bboxes: *max_bboxes
         minoverlap: 0.5
+        eval_type: *data_type
+        color_space: *color_space
         saved_best_map: True
         show_frequency: 10
     - AdvanceWarmUpLearningRate:
