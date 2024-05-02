@@ -127,15 +127,9 @@ class YOLO(tf.keras.Model):
             backup_model.get_layer("small_bbox_predictor").pop()
             backup_model.save_weights(weight_path, save_format=save_format, **kwargs)
 
-    def load_weights(self, weight_objects):
-        for weight in weight_objects:
-            weight_path = weight['path']
-            custom_objects = weight['custom_objects']
-            if weight_path:
-                self.architecture.build(input_shape=self.image_size)
-                self.architecture.built = True
-                self.architecture.load_weights(weight_path)
-                logger.info("Load yolo weights from {}".format(weight_path))
+    def load_weights(self, weights):
+        self.architecture.load_weights(weights).expect_partial()
+        logger.info("Load yolo weights from {}".format(weights))
 
     def save_models(self, weight_path, save_format='tf'):
         self.architecture.save(weight_path, save_format=save_format)
