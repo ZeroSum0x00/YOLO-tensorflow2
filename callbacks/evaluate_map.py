@@ -123,8 +123,8 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 if self.saved_best_map:
                     if map_result > self.current_map and map_result > self.min_ratio:
                         logger.info(f'mAP score increase {self.current_map*100:.2f}% to {map_result*100:.2f}%')
-                        logger.info(f'Save best mAP weights to {os.path.join(self.result_path, "weights")}best_weights_mAP')                    
-                        self.model.save_weights(os.path.join(self.result_path, "weights", 'best_weights_mAP'))
+                        logger.info(f'Save best mAP weights to {os.path.join(self.result_path, "weights", "best_weights_mAP")}')                    
+                        self.model.save_weights(os.path.join(self.result_path, "weights", "best_weights_mAP"))
                         self.current_map = map_result
     
                 self.maps.append(map_result)
