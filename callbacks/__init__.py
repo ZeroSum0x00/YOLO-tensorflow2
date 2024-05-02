@@ -20,12 +20,13 @@ def build_callbacks(config, model, result_path):
             value = list(cfg.values())[0]
             extend_path = value.pop("extend_path", None)
             
-            if name == "mAPEvaluate":
-                value.update({
-                    'input_shape': model.architecture.input_size,
-                    'classes': model.classes,
-                    'max_bboxes': model.architecture.max_boxes
-                })
+            # if name == "mAPEvaluate":
+            #     value.update({
+            #         'input_shape': model.architecture.input_size,
+            #         'classes': model.classes,
+            #         'max_bboxes': model.architecture.max_boxes
+            #     })
+                
             if extend_path is not None:
                 save_path = os.path.join(save_path, extend_path)
                 
