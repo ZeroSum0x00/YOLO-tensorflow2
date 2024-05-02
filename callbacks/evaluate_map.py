@@ -15,25 +15,22 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 
+
 class mAPEvaluate(tf.keras.callbacks.Callback):
     def __init__(self, 
                  result_path    = None, 
-                 input_shape    = None, 
                  classes        = None, 
-                 max_bboxes     = 100, 
                  minoverlap     = 0.5,
-                 mode           = 'voc',
+                 eval_type      = 'VOC',
                  color_space    = 'BGR',
                  min_ratio      = 0.2,
                  saved_best_map = True,
                  show_frequency = 100):
         super(mAPEvaluate, self).__init__()
-        self.input_shape          = input_shape
-        self.classes              = classes
         self.result_path          = result_path
-        self.max_bboxes           = max_bboxes
+        self.classes              = classes
         self.minoverlap           = minoverlap
-        self.mode                 = mode
+        self.eval_type            = eval_type
         self.color_space          = color_space
         self.min_ratio            = min_ratio
         self.saved_best_map       = saved_best_map
@@ -60,7 +57,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
         out_scores = out_scores.numpy()
         out_classes = out_classes.numpy()
         
-        top_100     = np.argsort(out_scores)[..., ::-1][:self.max_bboxes]
+        top_100     = np.argsort(out_scores)[..., ::-1][:self.model.architecture.max_boxes]
         out_boxes   = out_boxes[top_100]
         out_scores  = out_scores[top_100]
         out_classes = out_classes[top_100]
@@ -81,9 +78,12 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
         return 
     
     def on_epoch_end(self, epoch, logs=None):
+        if self.classes is None:
+            self.classes = self.model.classes
+
         temp_epoch = epoch + 1
         if temp_epoch % self.show_frequency == 0:
-            if self.val_dataset is not None:
+            if self.val_dataset is not None and self.classes:
                 if not os.path.exists(self.map_out_path):
                     os.makedirs(self.map_out_path)
                 if not os.path.exists(os.path.join(self.map_out_path, "ground-truth")):
@@ -102,7 +102,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                     
                     gt_boxes = ann_dataset['bboxes']
     
-                    image  = resize_image(image, self.input_shape, letterbox_image=True)
+                    image  = resize_image(image, self.model.image_size, letterbox_image=True)
                     image  = preprocess_input(image.astype(np.float32))
     
                     self.get_map_txt(image, original_image_shape, img_name, self.classes, self.map_out_path)
@@ -115,7 +115,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                             
                 print("Calculate Map.")
                 
-                if self.mode.lower() == 'coco':
+                if self.eval_type.lower() == 'coco':
                     map_result = get_coco_map(class_names=self.classes, path=self.map_out_path)[1]
                 else:
                     map_result = get_map(self.minoverlap, False, path=self.map_out_path)
