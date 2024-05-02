@@ -112,7 +112,7 @@ Optimizer:
 Callbacks:
     - mAPEvaluate:
         minoverlap: 0.5
-        eval_type: *data_type
+        eval_type: 'VOC'
         color_space: *color_space
         saved_best_map: True
         show_frequency: 10
