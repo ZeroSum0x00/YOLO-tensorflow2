@@ -17,7 +17,7 @@ def train(file_config):
     train_config = config['Train']
     data_config  = config['Dataset']
               
-    if train_prepare(train_config['mode']):
+    if train_prepare(train_config['mode'], train_config['random_seed']):
         TRAINING_TIME_PATH = create_folder_weights(train_config['save_weight_path'])
         shutil.copy(file_config, os.path.join(TRAINING_TIME_PATH, os.path.basename(file_config)))
 
