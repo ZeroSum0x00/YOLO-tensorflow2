@@ -1,7 +1,9 @@
 import os
 import sys
+import random
 import logging
 import datetime
+import numpy as np
 import tensorflow as tf
 from utils.logger import logger
 from utils.files import verify_folder
@@ -15,8 +17,7 @@ def losses_prepare(loss_object):
     
 def train_prepare(train_mode, init_seed=-1):
     try:
-        if init_seed > 0:
-            print(init_seed)
+        if init_seed >= 0:
             random.seed(init_seed)
             np.random.seed(init_seed)
             tf.random.set_seed(init_seed)
