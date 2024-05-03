@@ -64,17 +64,21 @@ def train(file_config):
 
         if valid_generator is not None:
             model.fit(train_generator,
-                      steps_per_epoch  = train_generator.N // train_config['batch_size'],
-                      validation_data  = valid_generator,
-                      validation_steps = valid_generator.N // train_config['batch_size'],
-                      epochs           = train_config['epoch']['end'],
-                      initial_epoch    = train_config['epoch']['start'],
-                      callbacks        = callbacks)
+                      steps_per_epoch     = train_generator.N // train_config['batch_size'],
+                      validation_data     = valid_generator,
+                      validation_steps    = valid_generator.N // train_config['batch_size'],
+                      epochs              = train_config['epoch']['end'],
+                      initial_epoch       = train_config['epoch']['start'],
+                      use_multiprocessing = True if train_config['num_workers'] > 1 else False,
+                      workers             = train_config['num_workers'],
+                      callbacks           = callbacks)
         else:
             model.fit(train_generator,
                       steps_per_epoch     = train_generator.n // train_config['batch_size'],
                       epochs              = train_config['epoch']['end'],
                       initial_epoch       = train_config['epoch']['start'],
+                      use_multiprocessing = True if train_config['num_workers'] > 1 else False,
+                      workers             = train_config['num_workers'],
                       callbacks           = callbacks)
             
         if test_generator is not None:
