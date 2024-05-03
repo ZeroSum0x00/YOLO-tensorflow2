@@ -141,7 +141,7 @@ class YOLOv3(tf.keras.Model):
 
     def call(self, inputs, training=False):
         feature_maps = self.backbone(inputs, training=training)
-        P3, P4, P5   = feature_maps[2:]
+        P3, P4, P5   = feature_maps[-3:]
         P3, P4, P5   = self.neck([P3, P4, P5], training=training)
         P5_out       = self.conv_lbbox(P5, training=training)
         P4_out       = self.conv_mbbox(P4, training=training)
