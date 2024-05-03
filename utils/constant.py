@@ -7,5 +7,5 @@ yolo_anchors = [[ 10,  13],
                 [116,  90],
                 [156, 198],
                 [373, 326]]
-yolo_anchor_masks = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
-yolo_strides = [8, 16, 32]
+yolo_anchor_masks = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
+yolo_strides = 8
