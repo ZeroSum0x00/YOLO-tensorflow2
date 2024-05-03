@@ -297,5 +297,5 @@ class Data_Sequence(tf.keras.utils.Sequence):
 
     def on_epoch_end(self):
         self.current_epoch += 1
-        if self.phase:
-            self.dataset = shuffle(self.dataset)
+        # if self.phase == "train":
+        self.dataset = shuffle(self.dataset)
