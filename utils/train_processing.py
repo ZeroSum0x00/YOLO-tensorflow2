@@ -13,8 +13,14 @@ def losses_prepare(loss_object):
     return loss
 
     
-def train_prepare(train_mode):
+def train_prepare(train_mode, init_seed=-1):
     try:
+        if init_seed > 0:
+            print(init_seed)
+            random.seed(init_seed)
+            np.random.seed(init_seed)
+            tf.random.set_seed(init_seed)
+            
         if train_mode == 'cpu':
             tf.config.set_visible_devices([], 'GPU')
             return True
