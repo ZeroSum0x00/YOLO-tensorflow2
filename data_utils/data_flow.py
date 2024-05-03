@@ -280,9 +280,9 @@ class Data_Sequence(tf.keras.utils.Sequence):
                     images, bboxes = self.augmentor(images, bboxes)
 
             images, bboxes = self.normalizer(images, 
-                                            bboxes=bboxes,
-                                            target_size=self.target_size,
-                                            interpolation=cv2.INTER_NEAREST)
+                                             bboxes=bboxes,
+                                             target_size=self.target_size,
+                                             interpolation=cv2.INTER_NEAREST)
             
             batch_image.append(images)
             batch_label.append(bboxes)
