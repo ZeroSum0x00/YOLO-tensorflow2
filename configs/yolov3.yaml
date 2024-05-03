@@ -82,6 +82,7 @@ Train:
     mode: 'graph'
     save_weight_path: &save_weight './saved_weights/'
     save_weight_type: &save_type 'tf'
+    random_seed: 0
     batch_size: 16
     epoch:
         start: 0
