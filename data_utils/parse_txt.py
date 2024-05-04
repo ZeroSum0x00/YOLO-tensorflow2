@@ -38,6 +38,7 @@ class ParseTXT:
                         print(f"Error: Image file {image_file} must be 3 channel in shape")
                         continue
                 except Exception as e:
+                    os.remove(image_path)
                     print(f"Error: File {image_file} is can't loaded: {e}")
                     continue
                     
