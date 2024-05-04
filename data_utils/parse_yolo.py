@@ -27,9 +27,6 @@ class ParseYOLO:
                 image_path = os.path.join(self.data_dir, image_file)
                 try:
                     # img = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-                    # if len(img.shape) != 3:
-                    #     print(f"Error: Image file {image_file} must be 3 channel in shape")
-                    #     continue
                     img = cv2.imread(image_path, 1)
                     if len(img.shape) != 3:
                         print(f"Error: Image file {image_file} must be 3 channel in shape")
