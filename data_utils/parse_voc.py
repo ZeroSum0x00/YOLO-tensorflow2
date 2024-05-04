@@ -39,9 +39,11 @@ class ParseVOC:
                         with open(xml_path, 'rb') as f:
                             xml.sax.parse(f, xml.sax.ContentHandler())
                     except:
+                        os.remove(image_path)
                         print(f"Error: XML file {xml_file} is missing or not in correct format")
                         continue
                 except Exception as e:
+                    os.remove(image_path)
                     print(f"Error: File {image_file} is can't loaded: {e}")
                     continue
                     
