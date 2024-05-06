@@ -262,7 +262,7 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
     # close the plot
     plt.close()
 
-def get_map(MINOVERLAP=0.5, draw_plot=False, score_threhold=0.5, path='./map_out', verbose=True):
+def get_voc_map(MINOVERLAP=0.5, draw_plot=False, score_threhold=0.5, path='./map_out', verbose=True):
     GT_PATH             = os.path.join(path, 'ground-truth')
     DR_PATH             = os.path.join(path, 'detection-results')
     IMG_PATH            = os.path.join(path, 'images-optional')
