@@ -8,3 +8,4 @@ scikit-learn
 matplotlib
 PyYAML
 prettytable
+pycocotools
