@@ -12,6 +12,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import numpy as np
+from utils.files import get_files
 from utils.logger import logger
 
 try:
@@ -311,7 +312,7 @@ def get_map(MINOVERLAP=0.5, draw_plot=False, score_threhold=0.5, path='./map_out
     if show_animation:
         os.makedirs(os.path.join(RESULTS_FILES_PATH, "images", "detections_one_by_one"))
 
-    ground_truth_files_list = glob.glob(GT_PATH + '/*.txt')
+    ground_truth_files_list = get_files(GT_PATH, extensions='txt')
     if len(ground_truth_files_list) == 0:
         error("Error: No ground-truth files found!")
     ground_truth_files_list.sort()
@@ -319,13 +320,13 @@ def get_map(MINOVERLAP=0.5, draw_plot=False, score_threhold=0.5, path='./map_out
     counter_images_per_class = {}
 
     for txt_file in ground_truth_files_list:
-        file_id     = txt_file.split(".txt", 1)[0]
-        file_id     = os.path.basename(os.path.normpath(file_id))
-        temp_path   = os.path.join(DR_PATH, (file_id + ".txt"))
+        filename = txt_file.split('.')[0]
+        temp_path   = os.path.join(DR_PATH, txt_file)
+        
         if not os.path.exists(temp_path):
             error("Error. File not found: {}\n".format(temp_path))
 
-        lines_list      = file_lines_to_list(txt_file)
+        lines_list      = file_lines_to_list(os.path.join(GT_PATH, txt_file))
         bounding_boxes  = []
         is_difficult    = False
         already_seen_classes = []
@@ -378,21 +379,20 @@ def get_map(MINOVERLAP=0.5, draw_plot=False, score_threhold=0.5, path='./map_out
                         counter_images_per_class[class_name] = 1
                     already_seen_classes.append(class_name)
 
-        with open(TEMP_FILES_PATH + "/" + file_id + "_ground_truth.json", 'w') as outfile:
+        with open(TEMP_FILES_PATH + "/" + filename + "_ground_truth.json", 'w') as outfile:
             json.dump(bounding_boxes, outfile)
 
     gt_classes  = list(gt_counter_per_class.keys())
     gt_classes  = sorted(gt_classes)
     n_classes   = len(gt_classes)
 
-    dr_files_list = glob.glob(DR_PATH + '/*.txt')
+    dr_files_list = get_files(DR_PATH, extensions='txt')
     dr_files_list.sort()
     for class_index, class_name in enumerate(gt_classes):
         bounding_boxes = []
         for txt_file in dr_files_list:
-            file_id = txt_file.split(".txt",1)[0]
-            file_id = os.path.basename(os.path.normpath(file_id))
-            temp_path = os.path.join(GT_PATH, (file_id + ".txt"))
+            filename = txt_file.split('.')[0]
+            temp_path = os.path.join(GT_PATH, txt_file)
             if class_index == 0:
                 if not os.path.exists(temp_path):
                     error("Error. File not found: {}\n".format(temp_path))
@@ -415,7 +415,7 @@ def get_map(MINOVERLAP=0.5, draw_plot=False, score_threhold=0.5, path='./map_out
 
                 if tmp_class_name == class_name:
                     bbox = x_min + " " + y_min + " " + x_max + " " + y_max
-                    bounding_boxes.append({"confidence":confidence, "file_id":file_id, "bbox":bbox})
+                    bounding_boxes.append({"confidence":confidence, "filename":filename, "bbox":bbox})
 
         bounding_boxes.sort(key=lambda x:float(x['confidence']), reverse=True)
         with open(TEMP_FILES_PATH + "/" + class_name + "_dr.json", 'w') as outfile:
@@ -440,17 +440,17 @@ def get_map(MINOVERLAP=0.5, draw_plot=False, score_threhold=0.5, path='./map_out
             score       = [0] * nd
             score_threhold_idx = 0
             for idx, detection in enumerate(dr_data):
-                file_id     = detection["file_id"]
+                filename     = detection["filename"]
                 score[idx]  = float(detection["confidence"])
                 if score[idx] >= score_threhold:
                     score_threhold_idx = idx
 
                 if show_animation:
-                    ground_truth_img = glob.glob1(IMG_PATH, file_id + ".*")
+                    ground_truth_img = glob.glob1(IMG_PATH, filename + ".*")
                     if len(ground_truth_img) == 0:
-                        error("Error. Image not found with id: " + file_id)
+                        error("Error. Image not found with id: " + filename)
                     elif len(ground_truth_img) > 1:
-                        error("Error. Multiple image with id: " + file_id)
+                        error("Error. Multiple image with id: " + filename)
                     else:
                         img = cv2.imread(IMG_PATH + "/" + ground_truth_img[0])
                         img_cumulative_path = RESULTS_FILES_PATH + "/images/" + ground_truth_img[0]
@@ -462,7 +462,7 @@ def get_map(MINOVERLAP=0.5, draw_plot=False, score_threhold=0.5, path='./map_out
                         BLACK = [0, 0, 0]
                         img = cv2.copyMakeBorder(img, 0, bottom_border, 0, 0, cv2.BORDER_CONSTANT, value=BLACK)
 
-                gt_file             = TEMP_FILES_PATH + "/" + file_id + "_ground_truth.json"
+                gt_file             = TEMP_FILES_PATH + "/" + filename + "_ground_truth.json"
                 ground_truth_data   = json.load(open(gt_file))
                 ovmax       = -1
                 gt_match    = -1
@@ -678,7 +678,7 @@ def get_map(MINOVERLAP=0.5, draw_plot=False, score_threhold=0.5, path='./map_out
     """
     det_counter_per_class = {}
     for txt_file in dr_files_list:
-        lines_list = file_lines_to_list(txt_file)
+        lines_list = file_lines_to_list(os.path.join(DR_PATH, txt_file))
         for line in lines_list:
             class_name = line.split()[0]
             if class_name in det_counter_per_class:
