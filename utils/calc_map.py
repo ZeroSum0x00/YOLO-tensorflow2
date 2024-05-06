@@ -397,7 +397,7 @@ def get_map(MINOVERLAP=0.5, draw_plot=False, score_threhold=0.5, path='./map_out
                 if not os.path.exists(temp_path):
                     error("Error. File not found: {}\n".format(temp_path))
 
-            lines = file_lines_to_list(txt_file)
+            lines = file_lines_to_list(os.path.join(DR_PATH, txt_file))
             for line in lines:
                 try:
                     tmp_class_name, confidence, x_min, y_min, x_max, y_max = line.split()
