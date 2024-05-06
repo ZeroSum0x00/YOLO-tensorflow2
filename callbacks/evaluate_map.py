@@ -5,7 +5,9 @@ import numpy as np
 from tqdm import tqdm
 import tensorflow as tf
 
-from utils.calc_map import get_coco_map, get_map
+from utils.coco_map_calculator import get_coco_map
+from utils.voc_map_calculator import get_voc_map
+from utils.aio_map_calculator import get_aio_map
 from utils.post_processing import resize_image, preprocess_input
 from utils.auxiliary_processing import change_color_space
 from utils.logger import logger
