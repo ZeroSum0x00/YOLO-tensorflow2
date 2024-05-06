@@ -7,6 +7,18 @@ import tensorflow as tf
 from utils.logger import logger
 
 
+"""
+ Convert the lines of a file to a list
+"""
+def file_lines_to_list(path):
+    # open txt file lines to a list
+    with open(path) as f:
+        content = f.readlines()
+    # remove whitespace characters like `\n` at the end of each line
+    content = [x.strip() for x in content]
+    return content
+
+    
 def get_labels(label_file):
     with open(label_file, encoding='utf-8') as f:
         class_names = f.readlines()
