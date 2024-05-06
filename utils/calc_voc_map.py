@@ -11,8 +11,9 @@ import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
 matplotlib.use('Agg')
-from utils.files import get_files
-from utils.logger import logger
+from .post_processing import file_lines_to_list
+from .files import get_files
+from .logger import logger
 
 '''
     0,0 ------> x (width)
@@ -134,16 +135,6 @@ def voc_ap(rec, prec):
     return ap, mrec, mpre
 
 
-"""
- Convert the lines of a file to a list
-"""
-def file_lines_to_list(path):
-    # open txt file lines to a list
-    with open(path) as f:
-        content = f.readlines()
-    # remove whitespace characters like `\n` at the end of each line
-    content = [x.strip() for x in content]
-    return content
 
 """
  Draws text in image
