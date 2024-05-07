@@ -1,13 +1,14 @@
 import os
 import cv2
 import shutil
+import colorsys
 import numpy as np
 from tqdm import tqdm
 import tensorflow as tf
 
 from utils.coco_map_calculator import get_coco_map
 from utils.voc_map_calculator import get_voc_map
-from utils.aio_map_calculator import get_aio_map
+#from utils.aio_map_calculator import get_aio_map
 from utils.post_processing import resize_image, preprocess_input
 from utils.auxiliary_processing import change_color_space
 from utils.logger import logger
@@ -38,7 +39,8 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
         self.saved_best_map       = saved_best_map
         self.show_frequency       = show_frequency
         self.map_out_path         = result_path + ".temp_map_out"
-        self.maps                 = [0]
+        num_maps                  = 12 if eval_type.lower() == "coco" else 1
+        self.maps                 = [[0.0] for i in range(num_maps)]
         self.epoches              = [0]
         self.current_map          = 0.0
         self.val_dataset          = None
@@ -118,36 +120,44 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 print("Calculate Map.")
                 
                 if self.eval_type.lower() == 'coco':
-                    map_result = get_coco_map(class_names=self.classes, path=self.map_out_path)[0]
+                    map_titles  = ['AP@0.50:0.95', 'AP@0.50', 'AP@0.75', 'AP@0.50:0.95|S', 'AP@0.50:0.95|M', 'AP@0.50:0.95|L',
+                                   'AR@0.50:0.95|d1', 'AR@0.50:0.95|d10', 'AR@0.50:0.95|d100', 'AR@0.50:0.95|S', 'AR@0.50:0.95|M', 'AR@0.50:0.95|L']
+                    map_results = get_coco_map(class_names=self.classes, path=self.map_out_path)
                 else:
-                    map_result = get_voc_map(self.minoverlap, False, path=self.map_out_path)
-    
+                    map_titles  = ['mAP@0.5']
+                    map_results = get_voc_map(self.minoverlap, False, path=self.map_out_path)
+
+                for i in range(len(map_results)):
+                    self.maps[i].append(map_results[i])
+                        
                 if self.saved_best_map:
-                    if map_result > self.current_map and map_result > self.min_ratio:
-                        logger.info(f'mAP score increase {self.current_map*100:.2f}% to {map_result*100:.2f}%')
+                    if map_results[0] > self.current_map and map_results[0] > self.min_ratio:
+                        logger.info(f'mAP score increase {self.current_map*100:.2f}% to {map_results[0]*100:.2f}%')
                         logger.info(f'Save best mAP weights to {os.path.join(self.result_path, "weights", "best_weights_mAP")}')                    
                         self.model.save_weights(os.path.join(self.result_path, "weights", "best_weights_mAP"))
-                        self.current_map = map_result
-    
-                self.maps.append(map_result)
+                        self.current_map = map_results[0]
+                    
                 self.epoches.append(temp_epoch)
-    
                 with open(os.path.join(self.result_path, 'summary', "epoch_map.txt"), 'a') as f:
-                    if epoch == 0:
-                        f.write(f"mAP score in epoch 0: 0.0")
-                    f.write(f"mAP score in epoch {epoch + 1}: {str(map_result*100)}")
-                    f.write("\n")
-                
+                    if len(map_results) == 1:
+                        f.write(f"{map_titles[0]} score in epoch {epoch + 1}: {map_results[0]*100}\n")
+                    else:
+                        f.write(f"mAP score in epoch {epoch + 1}:\n")
+                        for title, map in zip(map_titles, map_results):
+                            f.write(f"\t{title}: {map * 100:.3f}\n")
+                            
                 plt.figure()
-                plt.plot(self.epoches, self.maps, 'red', linewidth = 2, label='mAP map')
-    
+                for i in range(len(self.maps)):
+                    linewidth = 4 if i == 0 else 2
+                    plt.plot(self.epoches, self.maps[i], linewidth=linewidth, label=map_titles[i])
+                    
                 plt.grid(True)
                 plt.xlabel('Epoch')
-                plt.ylabel('Map %s'%str(self.minoverlap))
-                plt.title('A Map Curve')
+                plt.ylabel('mAP')
+                plt.title('A mAP graph')
                 plt.legend(loc="lower right")
     
-                plt.savefig(os.path.join(self.result_path, 'summary', "epoch_map.png"))
+                plt.savefig(os.path.join(self.result_path, 'summary', "epoch_maps.png"))
                 plt.cla()
                 plt.close("all")
                 shutil.rmtree(self.map_out_path)
