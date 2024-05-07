@@ -120,7 +120,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 if self.eval_type.lower() == 'coco':
                     map_result = get_coco_map(class_names=self.classes, path=self.map_out_path)[0]
                 else:
-                    map_result = get_map(self.minoverlap, False, path=self.map_out_path)
+                    map_result = get_voc_map(self.minoverlap, False, path=self.map_out_path)
     
                 if self.saved_best_map:
                     if map_result > self.current_map and map_result > self.min_ratio:
