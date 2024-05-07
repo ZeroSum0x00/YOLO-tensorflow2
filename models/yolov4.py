@@ -16,6 +16,7 @@ from utils.logger import logger
 from utils.constant import *
 
 
+
 class SPPLayer(tf.keras.layers.Layer):
     def __init__(self, 
                  pool_sizes     = [13, 9, 5],
@@ -47,34 +48,44 @@ class SPPLayer(tf.keras.layers.Layer):
 
 class PANLayer(tf.keras.layers.Layer):
     def __init__(self, 
-                 activation      = 'leaky', 
-                 norm_layer      = 'bn', 
+                 activation      = 'mish', 
+                 normalizer      = 'batch-norm', 
                  name            = "PANLayer", 
                  **kwargs):
         super(PANLayer, self).__init__(name=name, **kwargs)
         self.activation     = activation
-        self.norm_layer     = norm_layer
+        self.normalizer     = normalizer
 
     def build(self, input_shape):
-        self.P5_up     = self._upsample_block(256, 2, self.activation, self.norm_layer)
-        self.P4_conv0  = ConvolutionBlock(256, 1, False, self.activation, self.norm_layer)
-        self.P4_block0 = self._conv_block([256, 512, 256, 512, 256], self.activation, self.norm_layer)
-        self.P4_up     = self._upsample_block(128, 2, self.activation, self.norm_layer)
-        self.P3_conv0  = ConvolutionBlock(128, 1, False, self.activation, self.norm_layer)
-        self.P3_block0 = self._conv_block([128, 256, 128, 256, 128], self.activation, self.norm_layer)
-        self.P3_down   = ConvolutionBlock(256, 3, True, self.activation, self.norm_layer)
-        self.P4_block1 = self._conv_block([256, 512, 256, 512, 256], self.activation, self.norm_layer)
-        self.P4_down   = ConvolutionBlock(512, 3, True, self.activation, self.norm_layer)
-        self.P5_block1 = self._conv_block([512, 1024, 512, 1024, 512], self.activation, self.norm_layer)
+        self.P5_up     = self._upsample_block(256, 2)
+        self.P4_conv0  = ConvolutionBlock(256, 1, False, 1, 1, self.activation, self.normalizer)
+        self.P4_block0 = self._conv_block([256, 512, 256, 512, 256])
+        self.P4_up     = self._upsample_block(128, 2)
+        self.P3_conv0  = ConvolutionBlock(128, 1, False, 1, 1, self.activation, self.normalizer)
+        self.P3_block0 = self._conv_block([128, 256, 128, 256, 128])
+        self.P3_down   = ConvolutionBlock(256, 3, True, 1, 1, self.activation, self.normalizer)
+        self.P4_block1 = self._conv_block([256, 512, 256, 512, 256])
+        self.P4_down   = ConvolutionBlock(512, 3, True, 1, 1, self.activation, self.normalizer)
+        self.P5_block1 = self._conv_block([512, 1024, 512, 1024, 512])
 
-    def _conv_block(self, num_filters, activation='leaky', norm_layer='batchnorm'):
+    def _conv_block(self, num_filters):
         return Sequential([
-            ConvolutionBlock(filters, 1 if i % 2 == 0 else 3, False, activation, norm_layer) for i, filters in enumerate(num_filters)
+            ConvolutionBlock(filters, 
+                             kernel_size   = 1 if i % 2 == 0 else 3, 
+                             downsample    = False,
+                             dilation_rate = (1, 1),
+                             groups        = 1,
+                             activation    = self.activation, 
+                             normalizer    = self.normalizer) for i, filters in enumerate(num_filters)
         ])
 
-    def _upsample_block(self, filters, upsample_size, activation='leaky', norm_layer='batchnorm'):
+    def _upsample_block(self, filters, upsample_size):
         return Sequential([
-            ConvolutionBlock(filters, 1, False, activation, norm_layer),
+            ConvolutionBlock(filters, 
+                             kernel_size   = (1, 1),
+                             downsample    = False,
+                             activation    = self.activation, 
+                             normalizer    = self.normalizer),
             UpSampling2D(size=upsample_size,)
         ])
 
@@ -115,7 +126,7 @@ class YOLOv4(tf.keras.Model):
                  anchors      = yolo_anchors,
                  anchor_masks = yolo_anchor_masks,
                  num_classes  = 80,
-                 activation   = 'leaky-relu', 
+                 activation   = 'mish', 
                  normalizer   = 'batch-norm', 
                  max_boxes    = 100,
                  confidence   = 0.5,
@@ -147,27 +158,44 @@ class YOLOv4(tf.keras.Model):
             self.head_dims = [self.head_dims * 2**i for i in range(3)]
             
         h0, h1, h2 = self.head_dims
-        self.block0     = self._conv_block([512, 1024, 512], self.activation, self.norm_layer, name='convolution_extractor_0')
+        self.block0     = self._conv_block([512, 1024, 512], name='convolution_extractor_0')
         self.spp        = SPPLayer([13, 9, 5], name="SPPLayer")
-        self.block1     = self._conv_block([512, 1024, 512], self.activation, self.norm_layer, name='convolution_extractor_1')
-        self.pan        = PANLayer(self.activation, self.norm_layer, name="PANLayer")
-        self.conv_sbbox = self._yolo_head(h0, self.activation, self.norm_layer, name='small_bbox_predictor')
-        self.conv_mbbox = self._yolo_head(h1, self.activation, self.norm_layer, name='medium_bbox_predictor')
-        self.conv_lbbox = self._yolo_head(h2, self.activation, self.norm_layer, name='large_bbox_predictor')
+        self.block1     = self._conv_block([512, 1024, 512], name='convolution_extractor_1')
+        self.pan        = PANLayer(self.activation, self.normalizer, name="PANLayer")
+        self.conv_sbbox = self._yolo_head(h0, name='small_bbox_predictor')
+        self.conv_mbbox = self._yolo_head(h1, name='medium_bbox_predictor')
+        self.conv_lbbox = self._yolo_head(h2, name='large_bbox_predictor')
 
-    def _conv_block(self, num_filters, activation='leaky', norm_layer='batchnorm', name="conv_block"):
+    def _conv_block(self, num_filters, name="conv_block"):
         return Sequential([
-            ConvolutionBlock(filters, 1 if i % 2 == 0 else 3, False, activation, norm_layer) for i, filters in enumerate(num_filters)
+            ConvolutionBlock(filters,
+                             kernel_size   = 1 if i % 2 == 0 else 3,
+                             downsample    = False,
+                             dilation_rate = (1, 1),
+                             groups        = 1,
+                             activation    = self.activation, 
+                             normalizer    = self.normalizer) for i, filters in enumerate(num_filters)
         ], name=name)
 
-    def _yolo_head(self, filters, activation='leaky', norm_layer='batchnorm', name='yolo_head'):
+    def _yolo_head(self, filters, name='yolo_head'):
         return Sequential([
-            ConvolutionBlock(filters, 3, False, activation, norm_layer),
-            ConvolutionBlock(self.num_anchor_per_scale*(self.num_classes + 5), 1, False, None, None)
+            ConvolutionBlock(filters,
+                             kernel_size   = (3, 3),
+                             downsample    = False,
+                             dilation_rate = (1, 1),
+                             groups        = 1,
+                             activation    = self.activation, 
+                             normalizer    = self.normalizer),
+            ConvolutionBlock(self.num_anchor_per_scale * (self.num_classes + 5),
+                             kernel_size   = (1, 1),
+                             downsample    = False,
+                             activation    = None,
+                             normalizer    = None)
         ], name=name)
 
     def call(self, inputs, training=False):
-        P3, P4, P5 = self.backbone(inputs, training=training)
+        feature_maps = self.backbone(inputs, training=training)
+        P3, P4, P5   = feature_maps[-3:]
         P5 = self.block0(P5, training=training)
         P5 = self.spp(P5, training=training)
         P5 = self.block1(P5, training=training)
@@ -228,7 +256,7 @@ class YOLOv4(tf.keras.Model):
         o = Input(shape=input_shape, name='Input')
         yolo_model = Model(inputs=[o], outputs=self.call(o), name=self.name).summary()
         del yolo_model
-    
+
     def plot_model(self, input_shape, saved_path=""):
         self.build(input_shape)
         o = Input(shape=input_shape, name='Input')
