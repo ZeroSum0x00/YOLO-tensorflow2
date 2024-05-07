@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras import backend as K
 from tensorflow.keras import Model
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Input
@@ -7,9 +8,12 @@ from tensorflow.keras.layers import MaxPool2D
 from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.layers import concatenate
 from tensorflow.keras.utils import plot_model
-from models.yolov3 import ConvolutionBlock
+
+from .yolov3 import ConvolutionBlock
+from utils.bboxes import yolo_correct_boxes, get_anchors_and_decode
+from utils.train_processing import losses_prepare
 from utils.logger import logger
-from configs import general_config as cfg
+from utils.constant import *
 
 
 class SPPLayer(tf.keras.layers.Layer):
@@ -107,26 +111,28 @@ class PANLayer(tf.keras.layers.Layer):
 class YOLOv4(tf.keras.Model):
     def __init__(self, 
                  backbone,
-                 num_classes     = 80,
-                 anchors         = cfg.YOLO_ANCHORS,
-                 anchor_mask     = cfg.YOLO_ANCHORS_MASK,
-                 activation      = 'leaky', 
-                 norm_layer      = 'bn', 
-                 max_boxes       = cfg.YOLO_MAX_BBOXES,
-                 confidence      = 0.5,
-                 nms_iou         = cfg.TEST_IOU_THRESHOLD,
-                 input_size      = cfg.YOLO_TARGET_SIZE,
-                 gray_padding    = True,
-                 name            = "YOLOv4", 
+                 head_dims    = [256, 512, 1024],
+                 anchors      = yolo_anchors,
+                 anchor_masks = yolo_anchor_masks,
+                 num_classes  = 80,
+                 activation   = 'leaky-relu', 
+                 normalizer   = 'batch-norm', 
+                 max_boxes    = 100,
+                 confidence   = 0.5,
+                 nms_iou      = 0.5,
+                 input_size   = None,
+                 gray_padding = True,
+                 name         = "YOLOv4", 
                  **kwargs):
         super(YOLOv4, self).__init__(name=name, **kwargs)
         self.backbone             = backbone
+        self.head_dims            = head_dims
         self.num_classes          = num_classes
         self.anchors              = np.array(anchors)
-        self.num_anchor_per_scale = len(anchor_mask)
-        self.anchor_mask          = np.array(anchor_mask)
+        self.num_anchor_per_scale = len(anchor_masks)
+        self.anchor_masks         = np.array(anchor_masks)
         self.activation           = activation
-        self.norm_layer           = norm_layer
+        self.normalizer           = normalizer
         self.max_boxes            = max_boxes
         self.confidence           = confidence
         self.nms_iou              = nms_iou
@@ -134,13 +140,20 @@ class YOLOv4(tf.keras.Model):
         self.gray_padding         = gray_padding
 
     def build(self, input_shape):
+        if isinstance(self.head_dims, (tuple, list)):
+            if len(self.head_dims) != 3:
+                raise ValueError("Length head_dims mutch equal 3")
+        else:
+            self.head_dims = [self.head_dims * 2**i for i in range(3)]
+            
+        h0, h1, h2 = self.head_dims
         self.block0     = self._conv_block([512, 1024, 512], self.activation, self.norm_layer, name='convolution_extractor_0')
         self.spp        = SPPLayer([13, 9, 5], name="SPPLayer")
         self.block1     = self._conv_block([512, 1024, 512], self.activation, self.norm_layer, name='convolution_extractor_1')
         self.pan        = PANLayer(self.activation, self.norm_layer, name="PANLayer")
-        self.conv_lbbox = self._yolo_head(1024, self.activation, self.norm_layer, name='large_bbox_predictor')
-        self.conv_mbbox = self._yolo_head(512, self.activation, self.norm_layer, name='medium_bbox_predictor')
-        self.conv_sbbox = self._yolo_head(256, self.activation, self.norm_layer, name='small_bbox_predictor')
+        self.conv_sbbox = self._yolo_head(h0, self.activation, self.norm_layer, name='small_bbox_predictor')
+        self.conv_mbbox = self._yolo_head(h1, self.activation, self.norm_layer, name='medium_bbox_predictor')
+        self.conv_lbbox = self._yolo_head(h2, self.activation, self.norm_layer, name='large_bbox_predictor')
 
     def _conv_block(self, num_filters, activation='leaky', norm_layer='batchnorm', name="conv_block"):
         return Sequential([
@@ -166,13 +179,13 @@ class YOLOv4(tf.keras.Model):
         return P5_out, P4_out, P3_out
 
     def decode(self, inputs):
-        image_shape = K.reshape(inputs[-1],[-1])
+        image_shape = K.reshape(inputs[-1], [-1])
         box_xy = []
         box_wh = []
         box_confidence  = []
         box_class_probs = []
-        for i in range(len(self.anchor_mask)):
-            sub_box_xy, sub_box_wh, sub_box_confidence, sub_box_class_probs = get_anchors_and_decode(inputs[i], self.anchors[self.anchor_mask[i]], self.num_classes, self.input_size[:-1])
+        for i in range(len(self.anchor_masks)):
+            sub_box_xy, sub_box_wh, sub_box_confidence, sub_box_class_probs = get_anchors_and_decode(inputs[i], self.anchors[self.anchor_masks[i]], self.num_classes, self.input_size[:-1])
             box_xy.append(K.reshape(sub_box_xy, [-1, 2]))
             box_wh.append(K.reshape(sub_box_wh, [-1, 2]))
             box_confidence.append(K.reshape(sub_box_confidence, [-1, 1]))
