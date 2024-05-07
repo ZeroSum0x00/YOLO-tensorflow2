@@ -118,7 +118,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 print("Calculate Map.")
                 
                 if self.eval_type.lower() == 'coco':
-                    map_result = get_coco_map(class_names=self.classes, path=self.map_out_path)[1]
+                    map_result = get_coco_map(class_names=self.classes, path=self.map_out_path)[0]
                 else:
                     map_result = get_map(self.minoverlap, False, path=self.map_out_path)
     
