@@ -792,4 +792,4 @@ def get_voc_map(MINOVERLAP=0.5, draw_plot=False, score_threhold=0.5, path='./map
             plot_color,
             ""
             )
-    return mAP
+    return [mAP]
