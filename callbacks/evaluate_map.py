@@ -155,7 +155,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 plt.xlabel('Epoch')
                 plt.ylabel('mAP')
                 plt.title('A mAP graph')
-                plt.legend(loc="lower right")
+                plt.legend(fontsize=7, loc="upper left")
     
                 plt.savefig(os.path.join(self.result_path, 'summary', "epoch_maps.png"))
                 plt.cla()
