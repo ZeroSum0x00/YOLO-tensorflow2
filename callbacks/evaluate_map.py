@@ -186,7 +186,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                             width * 0.003 * max_width,
                             height * 0.005 * max_height,
                             # alpha=0.85,
-                            facecolor='pink'
+                            facecolor='hotpink'
                     ))
                     plt.scatter(self.epoches[max_index], self.maps[i][max_index], s=80, facecolor='red')
 
