@@ -28,6 +28,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                  color_space    = 'BGR',
                  min_ratio      = 0.2,
                  saved_best_map = True,
+                 show_top_care  = -1,
                  show_frequency = 100):
         super(mAPEvaluate, self).__init__()
         self.result_path          = result_path
@@ -37,6 +38,7 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
         self.color_space          = color_space
         self.min_ratio            = min_ratio
         self.saved_best_map       = saved_best_map
+        self.show_top_care        = show_top_care
         self.show_frequency       = show_frequency
         self.map_out_path         = result_path + ".temp_map_out"
         num_maps                  = 12 if eval_type.lower() == "coco" else 1
@@ -120,8 +122,8 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 print("Calculate Map.")
                 
                 if self.eval_type.lower() == 'coco':
-                    map_titles  = ['AP@0.50:0.95', 'AP@0.50', 'AP@0.75', 'AP@0.50:0.95|S', 'AP@0.50:0.95|M', 'AP@0.50:0.95|L',
-                                   'AR@0.50:0.95|d1', 'AR@0.50:0.95|d10', 'AR@0.50:0.95|d100', 'AR@0.50:0.95|S', 'AR@0.50:0.95|M', 'AR@0.50:0.95|L']
+                    map_titles  = ['AP@0.50:0.95', 'AP@0.50', 'AP@0.75', 'AP@0.50:0.95[S]', 'AP@0.50:0.95[M]', 'AP@0.50:0.95[L]',
+                                   'AR@0.50:0.95[d1]', 'AR@0.50:0.95[d10]', 'AR@0.50:0.95[d100]', 'AR@0.50:0.95[S]', 'AR@0.50:0.95[M]', 'AR@0.50:0.95[L]']
                     map_results = get_coco_map(class_names=self.classes, path=self.map_out_path)
                 else:
                     map_titles  = ['mAP@0.5']
@@ -146,11 +148,42 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                         for title, map in zip(map_titles, map_results):
                             f.write(f"\t{title}: {map * 100:.3f}\n")
                             
-                plt.figure()
+                f = plt.figure()
+                max_height = np.max(self.maps)
+                max_width  = np.max(self.epoches)
                 for i in range(len(self.maps)):
+                    if self.show_top_care != -1 and i not in self.show_top_care:
+                        continue
+
                     linewidth = 4 if i == 0 else 2
+                    max_index = np.argmax(self.maps[i])
                     plt.plot(self.epoches, self.maps[i], linewidth=linewidth, label=map_titles[i])
-                    
+                    temp_text = plt.text(0, 0, 
+                                         f'{self.maps[i][max_index]:0.3f}', 
+                                         alpha=0,
+                                         fontsize=8, 
+                                         fontweight=600,
+                                         color='white')
+                    r = f.canvas.get_renderer()
+                    bb = temp_text.get_window_extent(renderer=r)
+                    width = bb.width
+                    height = bb.height
+                    text = plt.text(self.epoches[max_index] + (width * 0.0004 + 0.01) * max_width, 
+                                    self.maps[i][max_index] + (height * 0.002 + 0.012) * max_height, 
+                                    f'{self.maps[i][max_index]:0.3f}', 
+                                    fontsize=8, 
+                                    fontweight=600,
+                                    color='white')
+                    plt.gca().add_patch(
+                        plt.Rectangle(
+                            (self.epoches[max_index] + width * 0.0004 * max_width, self.maps[i][max_index] + height * 0.002 * max_height),
+                            width * 0.003 * max_width,
+                            height * 0.005 * max_height,
+                            alpha=0.8,
+                            facecolor='red'
+                    ))
+                    plt.scatter(self.epoches[max_index], self.maps[i][max_index], s=80, facecolor='red')
+
                 plt.grid(True)
                 plt.xlabel('Epoch')
                 plt.ylabel('mAP')
