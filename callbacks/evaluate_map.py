@@ -152,11 +152,11 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 max_height = np.max(self.maps)
                 max_width  = np.max(self.epoches)
                 for i in range(len(self.maps)):
-                    if self.show_top_care != -1 and i not in self.show_top_care:
+                    max_index = np.argmax(self.maps[i])
+                    if self.show_top_care != -1 and i not in self.show_top_care and self.epoches[max_index] == 0.:
                         continue
 
                     linewidth = 4 if i == 0 else 2
-                    max_index = np.argmax(self.maps[i])
                     plt.plot(self.epoches, self.maps[i], linewidth=linewidth, label=map_titles[i])
                     temp_text = plt.text(0, 0, 
                                          f'{self.maps[i][max_index]:0.3f}', 
