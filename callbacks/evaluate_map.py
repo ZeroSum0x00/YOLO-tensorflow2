@@ -124,9 +124,11 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 if self.eval_type.lower() == 'coco':
                     map_titles  = ['AP@0.50:0.95', 'AP@0.50', 'AP@0.75', 'AP@0.50:0.95[S]', 'AP@0.50:0.95[M]', 'AP@0.50:0.95[L]',
                                    'AR@0.50:0.95[d1]', 'AR@0.50:0.95[d10]', 'AR@0.50:0.95[d100]', 'AR@0.50:0.95[S]', 'AR@0.50:0.95[M]', 'AR@0.50:0.95[L]']
+                    map_colors  = ['red', 'orange', 'gold', 'chartreuse', 'green', 'cyan', 'deepskyblue', 'blue', 'indigo', 'darkviolet', 'darkmagenta', 'deeppink']
                     map_results = get_coco_map(class_names=self.classes, path=self.map_out_path)
                 else:
                     map_titles  = ['mAP@0.5']
+                    map_colors  = ['red']
                     map_results = get_voc_map(self.minoverlap, False, path=self.map_out_path)
 
                 for i in range(len(map_results)):
@@ -153,11 +155,15 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                 max_width  = np.max(self.epoches)
                 for i in range(len(self.maps)):
                     max_index = np.argmax(self.maps[i])
-                    if self.show_top_care != -1 and i not in self.show_top_care and self.epoches[max_index] == 0.:
+                    if (self.show_top_care != -1) and (i not in self.show_top_care):
+                        continue
+                        
+                    linewidth = 4 if i == 0 else 2
+                    plt.plot(self.epoches, self.maps[i], linewidth=linewidth, color=map_colors[i], label=map_titles[i])
+                        
+                    if round(np.max(self.maps[i]), 3) <= 0.:
                         continue
 
-                    linewidth = 4 if i == 0 else 2
-                    plt.plot(self.epoches, self.maps[i], linewidth=linewidth, label=map_titles[i])
                     temp_text = plt.text(0, 0, 
                                          f'{self.maps[i][max_index]:0.3f}', 
                                          alpha=0,
