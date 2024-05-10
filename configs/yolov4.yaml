@@ -89,14 +89,16 @@ Model:
         head_dims: [256, 512, 1024]
         activation: 'mish'
         normalizer: 'batch-norm'
-        max_boxes: *max_bboxes
-        confidence: 0.05
-        nms_iou: 0.5
-        gray_padding: True
     Backbone:
         name: CSPDarkNet53_backbone
         activation: 'mish'
         normalizer: 'batch-norm'
+    Decoder:
+        name: BaseDecoder
+        max_boxes: *max_bboxes
+        confidence: 0.05
+        nms_iou: 0.5
+        gray_padding: True
         
 Train:
     mode: 'graph'
