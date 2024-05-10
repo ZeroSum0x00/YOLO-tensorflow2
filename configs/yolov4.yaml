@@ -1,0 +1,153 @@
+Dataset:
+    data_dir: "/home/vbpo-101386/Desktop/TuNIT/Datasets/Object Detection/VOCTotal/"
+    annotation_dir: null
+    data_info:
+        data_type: &data_type 'VOC'
+        classes: &classes './configs/voc_classes.names'
+        coordinate: 'corners'
+        color_space: &color_space 'RGB'
+        max_bboxes: &max_bboxes 100
+        check_data: False
+        load_memory: False
+        exclude_crowd: True
+        exclude_difficult: True
+        exclude_truncated: False
+    data_normalizer:
+        norm_type: 'divide'
+        norm_mean: null
+        norm_std: null
+
+    data_augmentation:
+        train:
+            main:
+                - RandomFlip:
+                    mode: 'horizontal'
+                - RandomLightIntensity:
+                    hue_range: 0.1
+                    sat_range: 0.7
+                    val_range: 0.4
+                - ResizePadded:
+                    jitter: 0.3
+                    padding_color: [128, 128, 128]
+                    flexible: True
+            auxiliary:
+            merge:
+        valid:
+            main:
+                - ResizePadded:
+                    padding_color: [128, 128, 128]
+                    flexible: False
+            auxiliary:
+            merge:
+        test:
+    data_endemic_augmention:
+        train:
+        valid:
+        test:
+    data_loader_mode: 0
+    data_endemic_augmention_proba: 0.25
+    data_endemic_augmention_ratio: 0.7
+    
+Model:
+    input_shape: [416, 416, 3]
+    anchors: [[ 10,  13],
+              [ 16,  30],
+              [ 33,  23],
+              [ 30,  61],
+              [ 62,  45],
+              [ 59, 119],
+              [116,  90],
+              [156, 198],
+              [373, 326]]
+    anchor_masks: [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
+    strides: 8
+    classes: *classes
+    weight_path: null
+    load_weight_type: null
+    Architecture:
+        name: YOLOv4
+        head_dims: [256, 512, 1024]
+        activation: 'mish'
+        normalizer: 'batch-norm'
+        max_boxes: *max_bboxes
+        confidence: 0.05
+        nms_iou: 0.5
+        gray_padding: True
+    Backbone:
+        name: CSPDarkNet53_backbone
+        activation: 'mish'
+        normalizer: 'batch-norm'
+        
+Train:
+    mode: 'graph'
+    save_weight_path: &save_weight './saved_weights/'
+    save_weight_type: &save_type 'tf'
+    random_seed: 0
+    num_workers: 4
+    batch_size: 16
+    epoch:
+        start: 0
+        end: &end_epoch 300
+        
+Losses:
+    - YOLOLoss:
+        coeff: 1
+        ignore_threshold: 0.5
+        balance_ratio: [0.4, 1.0, 4]
+        box_ratio: 0.05
+        obj_ratio: 5.0
+        cls_ratio: 0.25
+        label_smoothing: 0.0
+        iou_method: 'CIOU'
+        focal_loss: False
+        focal_loss_ratio: 10
+        focal_alpha_ratio: 0.25
+        focal_gamma_ratio: 2
+
+Optimizer:
+    name: SGD
+    learning_rate: &lr 1.25e-03
+    momentum: 0.937
+    nesterov: True
+    weight_decay: 5.e-4
+
+
+Callbacks:
+    - mAPEvaluate:
+        minoverlap: 0.5
+        eval_type: 'COCO'
+        color_space: *color_space
+        saved_best_map: True
+        show_top_care: -1
+        show_frequency: 10
+    - AdvanceWarmUpLearningRate:
+        lr_init: *lr
+        lr_end: 1.25e-05
+        epochs: *end_epoch
+        warmup_epoch_ratio: 0.05 
+        warmup_lr_ratio: 0.1
+        no_aug_epoch_ratio: 0.05
+    - LossHistory:
+        save_best: False
+        save_format: *save_type
+    - ModelCheckpoint:
+        extend_path: 'weights/checkpoint_{epoch:04d}/saved_str_weights'
+        monitor: 'val_loss'
+        save_weights_only: True
+        save_freq: 'epoch'
+        period: 100
+        verbose: 1
+    - TensorBoard:
+        extend_path: 'logs'
+        update_freq: 1
+    - CSVLogger:
+        extend_path: 'summary/train_history.csv'
+        separator: ","
+        append: True
+    - TrainLogger:
+        extend_path: 'logs/training_log.log'
+    - TrainSummary:
+        extend_path: 'summary/train_summary.txt'
+
+Test:
+    data: '/home/vbpo-101386/Desktop/TuNIT/Datasets/Text Recognition/IIIT5K/test'
