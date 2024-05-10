@@ -114,9 +114,10 @@ Optimizer:
 Callbacks:
     - mAPEvaluate:
         minoverlap: 0.5
-        eval_type: 'VOC'
+        eval_type: 'COCO'
         color_space: *color_space
         saved_best_map: True
+        show_top_care: -1
         show_frequency: 10
     - AdvanceWarmUpLearningRate:
         lr_init: *lr
