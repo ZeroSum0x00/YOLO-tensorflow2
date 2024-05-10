@@ -62,21 +62,23 @@ Model:
     anchor_masks: [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
     strides: 8
     classes: *classes
-    weight_path: null
-    load_weight_type: null
+    weight_path: './saved_weights/best_weights_mAP'
+    load_weight_type: 'weights'
     Architecture:
         name: YOLOv3
         head_dims: [256, 512, 1024]
         activation: 'leaky-relu'
         normalizer: 'batch-norm'
-        max_boxes: *max_bboxes
-        confidence: 0.05
-        nms_iou: 0.5
-        gray_padding: True
     Backbone:
         name: DarkNet53_backbone
         activation: 'leaky-relu'
         normalizer: 'batch-norm'
+    Decoder:
+        name: BaseDecoder
+        max_boxes: *max_bboxes
+        confidence: 0.05
+        nms_iou: 0.5
+        gray_padding: True
         
 Train:
     mode: 'graph'
