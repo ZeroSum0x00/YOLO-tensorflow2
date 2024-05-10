@@ -11,20 +11,24 @@ from utils.logger import logger
 class YOLO(tf.keras.Model):
     def __init__(self, 
                  architecture, 
-                 image_size=(416, 416, 3),
-                 classes=None,
+                 decoder    = None,
+                 image_size = (416, 416, 3),
+                 classes    = None,
                  **kwargs):
         super(YOLO, self).__init__(**kwargs)
-        self.architecture            = architecture
-        self.architecture.input_size = image_size
-        self.image_size              = image_size
+        self.architecture       = architecture
+        self.decoder            = decoder
+        self.decoder.input_size = self.image_size = image_size
+                     
         if classes:
             if isinstance(classes, str):
                 self.classes, _ = get_labels(classes)
             else:
                 self.classes = classes
-            self.architecture.num_classes = len(self.classes)
+            self.architecture.num_classes = self.decoder.num_classes = len(self.classes)
 
+        self.decoder.anchors = self.architecture.anchors
+        self.decoder.anchor_masks = self.architecture.anchor_masks
         self.total_loss_tracker = tf.keras.metrics.Mean(name="loss")
 
     def compile(self, optimizer, loss, metrics=None, **kwargs):
@@ -111,10 +115,13 @@ class YOLO(tf.keras.Model):
 
     @tf.function
     def predict(self, inputs):
+        if self.decoder is None:
+            raise ValueError('When you want predict yolo model, you must define yolo decoder into `decode` param')
+
         images, origin_shape = inputs
         output_model = self.architecture(images, training=False)
         inputs  = [*output_model, origin_shape]
-        out_boxes, out_scores, out_classes = self.architecture.decode(inputs)
+        out_boxes, out_scores, out_classes = self.decoder(inputs)
         return out_boxes, out_scores, out_classes
 
     def save_weights(self, weight_path, save_head=True, save_format='tf', **kwargs):

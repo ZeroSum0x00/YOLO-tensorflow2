@@ -14,7 +14,7 @@ def build_losses(config, model):
         name = str(list(cfg.keys())[0])
         value = list(cfg.values())[0]
         coeff = value.pop("coeff")
-        add_value = {'input_shape': model.architecture.input_size,
+        add_value = {'input_shape': model.image_size,
                      'anchors': model.architecture.anchors,
                      'anchor_masks': model.architecture.anchor_masks,
                      'num_classes': model.architecture.num_classes}

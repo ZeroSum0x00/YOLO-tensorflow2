@@ -9,7 +9,6 @@ from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.utils import plot_model
 
 from models.architectures.darknet53 import ConvolutionBlock
-from utils.bboxes import yolo_correct_boxes, get_anchors_and_decode
 from utils.train_processing import losses_prepare
 from utils.logger import logger
 from utils.constant import *
@@ -88,11 +87,6 @@ class YOLOv3(tf.keras.Model):
                  num_classes  = 80,
                  activation   = 'leaky-relu', 
                  normalizer   = 'batch-norm', 
-                 max_boxes    = 100,
-                 confidence   = 0.5,
-                 nms_iou      = 0.5,
-                 input_size   = None,
-                 gray_padding = True,
                  name         = "YOLOv3", 
                  **kwargs):
         super(YOLOv3, self).__init__(name=name, **kwargs)
@@ -104,11 +98,6 @@ class YOLOv3(tf.keras.Model):
         self.anchor_masks         = np.array(anchor_masks)
         self.activation           = activation
         self.normalizer           = normalizer
-        self.max_boxes            = max_boxes
-        self.confidence           = confidence
-        self.nms_iou              = nms_iou
-        self.input_size           = input_size
-        self.gray_padding         = gray_padding
 
     def build(self, input_shape):
         if isinstance(self.head_dims, (tuple, list)):
@@ -159,51 +148,6 @@ class YOLOv3(tf.keras.Model):
         if loss:
             loss_value += loss(y_true, y_pred)
         return loss_value
-        
-    def decode(self, inputs):
-        image_shape = K.reshape(inputs[-1], [-1])
-        box_xy = []
-        box_wh = []
-        box_confidence  = []
-        box_class_probs = []
-        for i in range(len(self.anchor_masks)):
-            sub_box_xy, sub_box_wh, sub_box_confidence, sub_box_class_probs = get_anchors_and_decode(inputs[i], self.anchors[self.anchor_masks[i]], self.num_classes, self.input_size[:-1])
-            box_xy.append(K.reshape(sub_box_xy, [-1, 2]))
-            box_wh.append(K.reshape(sub_box_wh, [-1, 2]))
-            box_confidence.append(K.reshape(sub_box_confidence, [-1, 1]))
-            box_class_probs.append(K.reshape(sub_box_class_probs, [-1, self.num_classes]))
-        box_xy          = K.concatenate(box_xy, axis = 0)
-        box_wh          = K.concatenate(box_wh, axis = 0)
-        box_confidence  = K.concatenate(box_confidence, axis = 0)
-        box_class_probs = K.concatenate(box_class_probs, axis = 0)
-
-        boxes       = yolo_correct_boxes(box_xy, box_wh, self.input_size[:-1], image_shape, self.gray_padding)
-
-        box_scores  = box_confidence * box_class_probs
-
-        mask             = box_scores >= self.confidence
-        max_boxes_tensor = K.constant(self.max_boxes, dtype='int32')
-        boxes_out   = []
-        scores_out  = []
-        classes_out = []
-        for c in range(self.num_classes):
-            class_boxes      = tf.boolean_mask(boxes, mask[:, c])
-            class_box_scores = tf.boolean_mask(box_scores[:, c], mask[:, c])
-
-            nms_index = tf.image.non_max_suppression(class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=self.nms_iou)
-
-            class_boxes         = K.gather(class_boxes, nms_index)
-            class_boxes_coord   = tf.concat([class_boxes[:, :2][..., ::-1], class_boxes[:, 2:][..., ::-1]], axis=-1)
-            class_box_scores    = K.gather(class_box_scores, nms_index)
-            classes             = K.ones_like(class_box_scores, 'int32') * c
-
-            boxes_out.append(class_boxes_coord)
-            scores_out.append(class_box_scores)
-            classes_out.append(classes)
-        boxes_out      = K.concatenate(boxes_out, axis=0)
-        scores_out     = K.concatenate(scores_out, axis=0)
-        classes_out    = K.concatenate(classes_out, axis=0)
-        return boxes_out, scores_out, classes_out
 
     def print_summary(self, input_shape):
         self.build(input_shape)

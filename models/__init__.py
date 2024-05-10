@@ -5,6 +5,7 @@ from models.yolov3 import YOLOv3
 from models.yolov4 import YOLOv4
 from models.architectures import (DarkNet53, DarkNet53_backbone,
                                   CSPDarkNet53, CSPDarkNet53_backbone)
+from models.layers import BaseDecoder
 
 
 def build_models(config, weights=None):
@@ -27,7 +28,11 @@ def build_models(config, weights=None):
     architecture_config['anchor_masks'] = config.pop("anchor_masks")
     architecture = getattr(mod, architecture_name)(**architecture_config)
 
-    model = YOLO(architecture, image_size=input_shape, classes=config.pop('classes'))
+    decode_config = config['Decoder']
+    decode_name = decode_config.pop("name")
+    decoder = getattr(mod, decode_name)(**decode_config)
+    
+    model = YOLO(architecture, decoder, image_size=input_shape, classes=config.pop('classes'))
     
     if weights:
         model.load_weights(weights)
