@@ -206,6 +206,18 @@ class YOLOv4(tf.keras.Model):
         P5_out = self.conv_lbbox(P5, training=training)
         return P5_out, P4_out, P3_out
 
+    @tf.function
+    def predict(self, inputs):
+        output_model = self(inputs, training=False)
+        return output_model
+
+    def calc_loss(self, y_true, y_pred, loss_object):
+        loss = losses_prepare(loss_object)
+        loss_value = 0
+        if loss:
+            loss_value += loss(y_true, y_pred)
+        return loss_value
+        
     def decode(self, inputs):
         image_shape = K.reshape(inputs[-1], [-1])
         box_xy = []

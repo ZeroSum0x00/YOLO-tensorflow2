@@ -59,6 +59,9 @@ Dataset:
                     jitter: 0.3
                     padding_color: [128, 128, 128]
                     flexible: True
+            merge:
+                - Mixup:
+                    main_object_ratio: 0.65
         valid:
         test:
     data_loader_mode: 0
@@ -101,7 +104,7 @@ Train:
     save_weight_type: &save_type 'tf'
     random_seed: 0
     num_workers: 4
-    batch_size: 16
+    batch_size: 4
     epoch:
         start: 0
         end: &end_epoch 300

@@ -2,7 +2,9 @@ import copy
 import importlib
 from models.yolo import YOLO
 from models.yolov3 import YOLOv3
-from models.architectures import DarkNet53, DarkNet53_backbone
+from models.yolov4 import YOLOv4
+from models.architectures import (DarkNet53, DarkNet53_backbone,
+                                  CSPDarkNet53, CSPDarkNet53_backbone)
 
 
 def build_models(config, weights=None):
