@@ -174,15 +174,15 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                     bb = temp_text.get_window_extent(renderer=r)
                     width = bb.width
                     height = bb.height
-                    text = plt.text(self.epoches[max_index] + (width * 0.0004 + 0.01) * max_width, 
-                                    self.maps[i][max_index] + (height * 0.002 + 0.012) * max_height, 
+                    text = plt.text(self.epoches[max_index] + (width * 0.00027 + 0.01) * max_width, 
+                                    self.maps[i][max_index] + (height * 0.0017 + 0.012) * max_height, 
                                     f'{self.maps[i][max_index]:0.3f}', 
                                     fontsize=8, 
                                     fontweight=600,
                                     color='white')
                     plt.gca().add_patch(
                         plt.Rectangle(
-                            (self.epoches[max_index] + width * 0.0004 * max_width, self.maps[i][max_index] + height * 0.002 * max_height),
+                            (self.epoches[max_index] + width * 0.00027 * max_width, self.maps[i][max_index] + height * 0.0017 * max_height),
                             width * 0.003 * max_width,
                             height * 0.005 * max_height,
                             # alpha=0.85,
