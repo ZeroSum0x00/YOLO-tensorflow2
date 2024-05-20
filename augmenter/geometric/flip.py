@@ -21,6 +21,9 @@ class Flip:
             if self.coords == "centroids":
                 bboxes = coordinates_converter(bboxes, conversion="centroids2corners")
             bboxes[:, [0,2]] = w - bboxes[:, [2,0]]
+            for bbox in bboxes:
+                if bbox[0] > bbox[2]:
+                    bbox[[0, 2]] = bbox[[2, 0]]
             if self.coords == "centroids":
                 bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
                 
@@ -29,6 +32,9 @@ class Flip:
             if self.coords == "centroids":
                 bboxes = coordinates_converter(bboxes, conversion="centroids2corners")
             bboxes[:, [3,1]] = h - bboxes[:, [3,1]]
+            for bbox in bboxes:
+                if bbox[1] > bbox[3]:
+                    bbox[[1, 3]] = bbox[[3, 1]]
             if self.coords == "centroids":
                 bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
                 
