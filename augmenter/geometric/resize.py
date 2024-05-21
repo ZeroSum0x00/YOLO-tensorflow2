@@ -14,6 +14,7 @@ class Resize:
         self.interpolation = interpolation
 
     def __call__(self, image, bboxes):
+        copy_bboxes = copy.deepcopy(bboxes)
         try:
             h, w, _ = image.shape
         except:
@@ -27,23 +28,23 @@ class Resize:
         box_data = np.zeros((self.max_bboxes, 5))
         box_data[:, -1] = -1
         
-        if len(bboxes) > 0:
-            np.random.shuffle(bboxes)
+        if len(copy_bboxes) > 0:
+            np.random.shuffle(copy_bboxes)
             
             if self.coords == "centroids":
-                bboxes = coordinates_converter(bboxes, conversion="centroids2corners")
+                copy_bboxes = coordinates_converter(copy_bboxes, conversion="centroids2corners")
 
-            bboxes[:, [0, 2]] = np.round(bboxes[:, [0, 2]] * (iw/w), decimals=0)
-            bboxes[:, [1, 3]] = np.round(bboxes[:, [1, 3]] * (ih/h), decimals=0)
-            bboxes[:, 0:2][bboxes[:, 0:2] < 0] = 0
+            copy_bboxes[:, [0, 2]] = np.round(copy_bboxes[:, [0, 2]] * (iw/w), decimals=0)
+            copy_bboxes[:, [1, 3]] = np.round(copy_bboxes[:, [1, 3]] * (ih/h), decimals=0)
+            copy_bboxes[:, 0:2][copy_bboxes[:, 0:2] < 0] = 0
             
             if self.coords == "centroids":
-                bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
+                copy_bboxes = coordinates_converter(copy_bboxes, conversion="corners2centroids")
                 
-            if len(bboxes) > self.max_bboxes: 
-                bboxes = bboxes[:self.max_bboxes]
+            if len(copy_bboxes) > self.max_bboxes: 
+                copy_bboxes = copy_bboxes[:self.max_bboxes]
 
-            box_data[:len(bboxes)] = bboxes
+            box_data[:len(copy_bboxes)] = copy_bboxes
         return image, box_data
       
 
@@ -57,6 +58,7 @@ class ResizePadded:
         self.padding_color = padding_color
 
     def __call__(self, image, bboxes):
+        copy_bboxes = copy.deepcopy(bboxes)
         try:
             h, w, _ = image.shape
         except:
@@ -77,28 +79,28 @@ class ResizePadded:
             box_data = np.zeros((self.max_bboxes, 5))
             box_data[:, -1] = -1
 
-            if len(bboxes) > 0:
-                np.random.shuffle(bboxes)
+            if len(copy_bboxes) > 0:
+                np.random.shuffle(copy_bboxes)
                 
                 if self.coords == "centroids":
-                    bboxes = coordinates_converter(bboxes, conversion="centroids2corners")
+                    copy_bboxes = coordinates_converter(copy_bboxes, conversion="centroids2corners")
                 
-                bboxes[:, [0, 2]] = bboxes[:, [0, 2]] * scale + dw
-                bboxes[:, [1, 3]] = bboxes[:, [1, 3]] * scale + dh
-                bboxes[:, 0:2][bboxes[:, 0:2] < 0]   = 0
-                bboxes[:, 2][bboxes[:, 2] > iw]      = iw
-                bboxes[:, 3][bboxes[:, 3] > ih]      = ih
-                box_w   = bboxes[:, 2] - bboxes[:, 0]
-                box_h   = bboxes[:, 3] - bboxes[:, 1]
-                bboxes  = bboxes[np.logical_and(box_w > 1, box_h > 1)]
+                copy_bboxes[:, [0, 2]] = copy_bboxes[:, [0, 2]] * scale + dw
+                copy_bboxes[:, [1, 3]] = copy_bboxes[:, [1, 3]] * scale + dh
+                copy_bboxes[:, 0:2][copy_bboxes[:, 0:2] < 0]   = 0
+                copy_bboxes[:, 2][copy_bboxes[:, 2] > iw]      = iw
+                copy_bboxes[:, 3][copy_bboxes[:, 3] > ih]      = ih
+                box_w   = copy_bboxes[:, 2] - copy_bboxes[:, 0]
+                box_h   = copy_bboxes[:, 3] - copy_bboxes[:, 1]
+                copy_bboxes  = copy_bboxes[np.logical_and(box_w > 1, box_h > 1)]
                 
                 if self.coords == "centroids":                    
-                    bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
+                    copy_bboxes = coordinates_converter(copy_bboxes, conversion="corners2centroids")
                     
-                if len(bboxes) > self.max_bboxes: 
-                    bboxes = bboxes[:self.max_bboxes]
+                if len(copy_bboxes) > self.max_bboxes: 
+                    copy_bboxes = copy_bboxes[:self.max_bboxes]
                     
-                box_data[:len(bboxes)] = bboxes
+                box_data[:len(copy_bboxes)] = copy_bboxes
             return image_paded, box_data
 
         new_ar = w / h * random_range(1 - self.jitter, 1 + self.jitter) / random_range(1 - self.jitter, 1 + self.jitter)
@@ -155,27 +157,28 @@ class ResizePadded:
         box_data = np.zeros((self.max_bboxes, 5))
         box_data[:, -1] = -1
         
-        if len(bboxes) > 0:
-            np.random.shuffle(bboxes)
+        if len(copy_bboxes) > 0:
+            np.random.shuffle(copy_bboxes)
             if self.coords == "centroids":                
-                bboxes = coordinates_converter(bboxes, conversion="centroids2corners")
+                copy_bboxes = coordinates_converter(copy_bboxes, conversion="centroids2corners")
                 
-            bboxes[:, [0,2]] = bboxes[:, [0, 2]]*nw/w + dw
-            bboxes[:, [1,3]] = bboxes[:, [1, 3]]*nh/h + dh
-            bboxes[:, 0:2][bboxes[:, 0:2] < 0] = 0
-            bboxes[:, 2][bboxes[:, 2] > iw] = iw
-            bboxes[:, 3][bboxes[:, 3] > ih] = ih
-            box_w = bboxes[:, 2] - bboxes[:, 0]
-            box_h = bboxes[:, 3] - bboxes[:, 1]
-            bboxes = bboxes[np.logical_and(box_w > 1, box_h > 1)]
+            copy_bboxes[:, [0,2]] = copy_bboxes[:, [0, 2]]*nw/w + dw
+            copy_bboxes[:, [1,3]] = copy_bboxes[:, [1, 3]]*nh/h + dh
+            copy_bboxes[:, 0:2][copy_bboxes[:, 0:2] < 0] = 0
+            copy_bboxes[:, 2][copy_bboxes[:, 2] > iw] = iw
+            copy_bboxes[:, 3][copy_bboxes[:, 3] > ih] = ih
+            box_w = copy_bboxes[:, 2] - copy_bboxes[:, 0]
+            box_h = copy_bboxes[:, 3] - copy_bboxes[:, 1]
+            copy_bboxes = copy_bboxes[np.logical_and(box_w > 1, box_h > 1)]
             if self.coords == "centroids":                
-                bboxes = coordinates_converter(bboxes, conversion="corners2centroids")
+                copy_bboxes = coordinates_converter(copy_bboxes, conversion="corners2centroids")
                 
-            if len(bboxes) > self.max_bboxes: 
-                bboxes = bboxes[:self.max_bboxes]
+            if len(copy_bboxes) > self.max_bboxes: 
+                copy_bboxes = copy_bboxes[:self.max_bboxes]
 
-            box_data[:len(bboxes)] = bboxes
+            box_data[:len(copy_bboxes)] = copy_bboxes
         return image_data, box_data
+
 
 if __name__ == "__main__":
     image_path = "/content/sample_data/voc_tiny/train/000288.jpg"
