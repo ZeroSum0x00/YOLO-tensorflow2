@@ -147,8 +147,8 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
                         f.write(f"{map_titles[0]} score in epoch {epoch + 1}: {map_results[0]*100}\n")
                     else:
                         f.write(f"mAP score in epoch {epoch + 1}:\n")
-                        for title, map in zip(map_titles, map_results):
-                            f.write(f"\t{title}: {map * 100:.3f}\n")
+                        for title, mAP in zip(map_titles, map_results):
+                            f.write(f"\t{title}: {mAP * 100:.3f}\n")
                             
                 f = plt.figure()
                 max_height = np.max(self.maps)
