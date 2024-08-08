@@ -1,5 +1,6 @@
 import os
 import cv2
+import copy
 import random
 import numpy as np
 import tensorflow as tf
@@ -235,7 +236,7 @@ class Data_Sequence(tf.keras.utils.Sequence):
         return int(np.ceil(self.N / float(self.batch_size)))
 
     def get_samples(self, sample):
-        img_path = self.data_path + sample['filename']
+        img_path = os.path.join(self.data_path, sample['filename'])
         image = cv2.imread(img_path)
         image = change_color_space(image, 'bgr', self.color_space)
         box   = np.array(sample['bboxes'])
