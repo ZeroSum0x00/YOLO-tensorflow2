@@ -266,7 +266,7 @@ class Data_Sequence(tf.keras.utils.Sequence):
                     images, bboxes  = self.endemic_augmentor(images, bboxes)
             else:
                 sample = self.dataset[i]
-                img_path = self.data_path + sample['filename']
+                img_path = os.path.join(self.data_path, sample['filename'])
                 images = cv2.imread(img_path)
                 images = change_color_space(images, 'bgr', self.color_space)
                 bboxes = np.array(sample['bboxes'])
