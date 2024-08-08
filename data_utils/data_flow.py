@@ -1,6 +1,5 @@
 import os
 import cv2
-import copy
 import random
 import numpy as np
 import tensorflow as tf
