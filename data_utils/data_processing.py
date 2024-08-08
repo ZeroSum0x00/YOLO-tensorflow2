@@ -3,7 +3,7 @@ import cv2
 import types
 import numpy as np
 
-from utils.files import extract_zip, verify_folder, get_files
+from utils.files import extract_zip, get_files
 from data_utils import ParseVOC, ParseCOCO, ParseYOLO, ParseTXT
 
 
@@ -17,7 +17,7 @@ def extract_data_folder(data_dir, dst_dir=None):
 
         folder_name = data_dir.split('/')[-1]
         folder_name = os.path.splitext(folder_name)[0]
-        data_destination = verify_folder(data_destination) + folder_name 
+        data_destination = os.path.join(data_destination, folder_name)
 
         if not os.path.isdir(data_destination):
             extract_zip(data_dir, data_destination)
@@ -35,7 +35,7 @@ def get_data(data_dir,
              check_data     = False,
              load_memory    = False,
              *args, **kwargs):
-    data_dir = verify_folder(data_dir) + phase
+    data_dir = os.path.join(data_dir, phase)
     data_extraction = []
     
     if data_type.lower() == "voc" or data_type.lower() == 'pascal':
@@ -43,7 +43,7 @@ def get_data(data_dir,
         parser = ParseVOC(data_dir, annotation_dir, classes, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser(xml_files)
     elif data_type.lower() == "coco":
-        annotation_file = verify_folder(annotation_dir) + f'instances_{phase}.json'
+        annotation_file = os.path.join(annotation_dir, f'instances_{phase}.json')
         parser = ParseCOCO(data_dir, annotation_file, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser()
     elif data_type.lower() == "yolo":
@@ -51,11 +51,11 @@ def get_data(data_dir,
         parser = ParseYOLO(data_dir, annotation_dir, classes, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser(txt_files)
     elif data_type.lower() == "txt" or data_type.lower() == "text":
-        annotation_file = verify_folder(annotation_dir) + f'instances_{phase}.txt'
+        annotation_file = os.path.join(annotation_dir, f'instances_{phase}.txt')
         parser = ParseTXT(data_dir, annotation_file, load_memory, check_data=check_data, *args, **kwargs)
         data_extraction = parser()
     dict_data = {
-        'data_path': verify_folder(data_dir),
+        'data_path': data_dir,
         'data_extractor': data_extraction
     }
     return dict_data
