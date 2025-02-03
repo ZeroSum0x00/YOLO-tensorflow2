@@ -90,12 +90,9 @@ class mAPEvaluate(tf.keras.callbacks.Callback):
         temp_epoch = epoch + 1
         if temp_epoch % self.show_frequency == 0:
             if self.val_dataset is not None and self.classes:
-                if not os.path.exists(self.map_out_path):
-                    os.makedirs(self.map_out_path)
-                if not os.path.exists(os.path.join(self.map_out_path, "ground-truth")):
-                    os.makedirs(os.path.join(self.map_out_path, "ground-truth"))
-                if not os.path.exists(os.path.join(self.map_out_path, "detection-results")):
-                    os.makedirs(os.path.join(self.map_out_path, "detection-results"))
+                os.makedirs(os.path.join(self.map_out_path, "ground-truth"), exist_ok=True)
+                os.makedirs(os.path.join(self.map_out_path, "detection-results"), exist_ok=True)
+
                 print("\nGet map.")
                 
                 for ann_dataset in tqdm(self.val_dataset.dataset):
